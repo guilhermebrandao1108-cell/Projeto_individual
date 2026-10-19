@@ -49,7 +49,7 @@ Em desenvolvimento, o Vite encaminha `/api/*` para a API, então não há URL do
 npm test           # Vitest
 npm run lint       # oxlint
 npm run build      # checagem de tipos + build de produção em dist/
-npm run e2e        # Playwright: sobe API (porta 8001) e Vite (5174) e roda 8 fluxos
+npm run e2e        # Playwright: sobe API (porta 8001) e Vite (5174) e roda 9 fluxos
 ```
 
 O `npm run e2e` não usa o banco nem os servidores de desenvolvimento. Ele recria um banco próprio (`backend/e2e.db`) com os dados de demonstração e sobe a API e o Vite em portas separadas. No Windows, usa o Edge já instalado. Em outros sistemas, rode `npx playwright install chromium` uma vez antes. Os testes cobrem:
@@ -60,6 +60,8 @@ O `npm run e2e` não usa o banco nem os servidores de desenvolvimento. Ele recri
 - o acesso por perfil e o redirecionamento de quem não está logado;
 - o painel do gestor;
 - a paginação da fila, feita no servidor;
+- a exportação do CSV, sem dados pessoais;
+- a desativação de um atendente, que devolve os chamados dele à fila;
 - a fila no celular sem rolagem horizontal.
 
 Qualquer erro no console do navegador faz o teste falhar.

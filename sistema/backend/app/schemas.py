@@ -37,6 +37,16 @@ class UserCreate(RegisterIn):
     role: Role
 
 
+class StaffUpdate(BaseModel):
+    is_active: bool | None = None
+    role: Role | None = None
+
+
+class StaffUpdateOut(BaseModel):
+    user: UserOut
+    released_tickets: int
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = 'bearer'

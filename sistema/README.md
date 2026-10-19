@@ -4,8 +4,8 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Parte | Pasta | Status |
 |---|---|---|
-| API (backend) | [`backend/`](backend/) | ✅ 74 testes (pytest) · migrações Alembic |
-| Interface (frontend) | [`frontend/`](frontend/) | ✅ 18 testes (Vitest) + 8 de ponta a ponta (Playwright) |
+| API (backend) | [`backend/`](backend/) | ✅ 80 testes (pytest) · migrações Alembic |
+| Interface (frontend) | [`frontend/`](frontend/) | ✅ 18 testes (Vitest) + 9 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
 | Fila da equipe | Painel do gestor |
@@ -42,9 +42,11 @@ ABERTO ──primeira resposta / iniciar──▶ EM_ATENDIMENTO ◀──client
 |---|---|
 | **cliente** | abrir chamados; ver só os próprios; responder; confirmar ou rejeitar a solução; avaliar |
 | **atendente** | ver a fila inteira; responder; escrever notas internas; iniciar; pedir informações; propor solução; assumir chamados sem responsável |
-| **gestor** | tudo do atendente, mais transferir chamados, configurar filas e SLA, criar usuários e ver métricas |
+| **gestor** | tudo do atendente, mais transferir chamados, configurar filas e SLA, gerenciar a equipe, ver métricas e exportar dados |
 
 Clientes recebem 404, e não 403, ao tentar acessar chamados de outra pessoa, para não revelar quais IDs existem. A equipe não consegue fechar um chamado em nome do cliente.
+
+**Equipe:** quem é desativado não consegue mais entrar, e os chamados abertos dessa pessoa voltam para a fila sem responsável, com registro na auditoria. O gestor não pode desativar nem rebaixar a própria conta, então o sistema nunca fica sem gestor. A lista de usuários mostra só a equipe, e os e-mails dos clientes não aparecem para os atendentes.
 
 **Login protegido contra força bruta:** depois de 5 senhas erradas em 15 minutos para a mesma conta e o mesmo IP, o login responde 429 com `Retry-After`, mesmo que a senha seguinte esteja certa. E-mail inexistente e senha errada recebem a mesma mensagem, no mesmo tempo, para não revelar quais contas existem ([`ratelimit.py`](backend/app/ratelimit.py)). Como o contador fica na memória, ele vale para uma instância só; com várias instâncias, iria para o Redis.
 
@@ -105,9 +107,9 @@ Para começar com um banco vazio, sem dados de demonstração, use `.\.venv\Scri
 Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gestor** na tela de login. As contas de demonstração são `ana@demo.com`, `lucas@demo.com` e `gestor@demo.com`, todas com a senha `demo12345`. A documentação interativa da API fica em http://localhost:8000/docs.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest        # backend: 74 testes, ~20 s
+.\.venv\Scripts\python.exe -m pytest        # backend: 80 testes, ~25 s
 npm test                                     # frontend (em sistema/frontend): 18 testes
-npm run e2e                                  # ponta a ponta: sobe API + interface e roda 8 fluxos no navegador
+npm run e2e                                  # ponta a ponta: sobe API + interface e roda 9 fluxos no navegador
 ```
 
 O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da análise, as migrações (`alembic upgrade head` + `alembic check`), os testes e o seed do backend, o lint, os testes e o build do frontend e, por último, os testes de ponta a ponta no Chromium.
@@ -133,7 +135,8 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 | POST | `/tickets/{id}/confirm` · `/reject` | cliente dono |
 | POST | `/tickets/{id}/assign` | atendente (assumir) / gestor (transferir) |
 | GET, POST, PATCH | `/categories` | leitura: todos · escrita: gestor |
-| GET, POST | `/users` | equipe / gestor |
+| GET, POST | `/users` (só a equipe: clientes nunca são listados) | equipe / gestor |
+| PATCH | `/users/{id}` (`is_active`, `role`): desativar devolve os chamados abertos à fila | gestor |
 | GET | `/metrics/overview?start=&end=&category_id=` | gestor |
 | GET | `/metrics/export.csv?start=&end=`: um chamado por linha, sem nomes, e-mails ou mensagens | gestor |
 

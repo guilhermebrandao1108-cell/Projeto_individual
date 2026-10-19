@@ -5,7 +5,7 @@ Um sistema de gestão de chamados construído a partir de evidência. Antes de e
 | Etapa | Pasta | Status |
 |---|---|---|
 | 1. Estudo de caso: a dor existe? | [`analise/`](analise/) | ✅ Concluída |
-| 2. Sistema de gestão de chamados | [`sistema/`](sistema/) | ✅ API FastAPI + interface React, 100 testes (unitários, API e ponta a ponta) |
+| 2. Sistema de gestão de chamados | [`sistema/`](sistema/) | ✅ API FastAPI + interface React, 107 testes (unitários, API e ponta a ponta) |
 
 ## Etapa 1 — o que os dados mostram
 

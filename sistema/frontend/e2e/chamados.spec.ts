@@ -154,3 +154,19 @@ test('a fila é paginada no servidor', async ({ page }) => {
   await expect(pager.getByText(/^26–\d+ de \d+$/)).toBeVisible()
   await expect(page.locator('tbody tr td').first()).not.toHaveText(firstId!)
 })
+
+test('gestor desativa um atendente e os chamados dele voltam para a fila', async ({ page }) => {
+  await loginAs(page, 'Gestor')
+  await page.getByRole('link', { name: 'Equipe' }).click()
+  const marina = page.getByRole('row', { name: /Marina Atendente/ })
+  await expect(marina.getByText('Ativo', { exact: true })).toBeVisible()
+  await expect(page.getByRole('row', { name: /Gabriela Gestora/ }).getByRole('button')).toHaveCount(0) // cannot lock self out
+
+  page.once('dialog', (dialog) => dialog.accept())
+  await marina.getByRole('button', { name: 'Desativar' }).click()
+  await expect(marina.getByText('Inativo', { exact: true })).toBeVisible()
+  await expect(page.getByRole('status')).toContainText('para a fila sem responsável')
+
+  await marina.getByRole('button', { name: 'Reativar' }).click()
+  await expect(marina.getByText('Ativo', { exact: true })).toBeVisible()
+})

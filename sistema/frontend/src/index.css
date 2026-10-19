@@ -125,6 +125,8 @@ label.check input { width: auto; }
 .pager { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 14px; }
 .show-sm { display: none; }
 .form-table input[type='number'] { max-width: 110px; }
+tr.inactive td { color: var(--muted); }
+.table select { width: auto; padding: 4px 8px; }
 
 /* ticket page */
 .ticket-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }

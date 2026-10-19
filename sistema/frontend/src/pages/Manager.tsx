@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { download, query } from '../api/client'
-import { useCategories, useCreateUser, useMetrics, useSaveCategory, useStaff } from '../api/hooks'
-import type { Category, Metrics, Role } from '../api/types'
+import { useCategories, useCreateUser, useMetrics, useSaveCategory, useStaff, useUpdateStaff } from '../api/hooks'
+import type { Category, Metrics, Role, User } from '../api/types'
+import { useAuth } from '../auth/useAuth'
 import { Empty, ErrorNote, Loading } from '../components/ui'
 import { compare, type Delta } from '../lib/compare'
 import { formatNumber, formatPercent, ROLE_LABEL } from '../lib/format'
@@ -215,9 +216,44 @@ export function Categories() {
 }
 
 // --- Equipe ---------------------------------------------------------------------
+function MemberRow({ member, isMe, onReleased }: { member: User; isMe: boolean; onReleased: (text: string) => void }) {
+  const update = useUpdateStaff()
+  const toggle = () => {
+    if (member.is_active && !window.confirm(`Desativar ${member.name}? Os chamados abertos dele voltam para a fila.`)) return
+    update.mutate({ id: member.id, is_active: !member.is_active }, {
+      onSuccess: ({ released_tickets: n }) =>
+        n > 0 && onReleased(`${n} ${n === 1 ? 'chamado voltou' : 'chamados voltaram'} para a fila sem responsável.`),
+    })
+  }
+  return (
+    <tr className={member.is_active ? '' : 'inactive'}>
+      <td>{member.name}{isMe && <span className="muted small"> (você)</span>}</td>
+      <td>{member.email}</td>
+      <td>
+        <select value={member.role} disabled={isMe || update.isPending} aria-label={`Perfil de ${member.name}`}
+                onChange={(e) => update.mutate({ id: member.id, role: e.target.value as Role })}>
+          <option value="atendente">{ROLE_LABEL.atendente}</option>
+          <option value="gestor">{ROLE_LABEL.gestor}</option>
+        </select>
+      </td>
+      <td>{member.is_active ? <span className="badge status-fechado">Ativo</span> : <span className="badge">Inativo</span>}</td>
+      <td>
+        {!isMe && (
+          <button className={`btn small ${member.is_active ? 'danger' : ''}`} disabled={update.isPending} onClick={toggle}>
+            {member.is_active ? 'Desativar' : 'Reativar'}
+          </button>
+        )}
+        <ErrorNote error={update.error} />
+      </td>
+    </tr>
+  )
+}
+
 export function Team() {
-  const staff = useStaff(true)
+  const { user } = useAuth()
+  const staff = useStaff(true, true)
   const create = useCreateUser()
+  const [notice, setNotice] = useState<string | null>(null)
   const empty = { name: '', email: '', password: '', role: 'atendente' as Role }
   const [form, setForm] = useState(empty)
 
@@ -228,14 +264,18 @@ export function Team() {
 
   return (
     <>
-      <div className="page-head"><h1>Equipe</h1></div>
+      <div className="page-head">
+        <h1>Equipe</h1>
+        <span className="muted small">Quem é desativado não consegue entrar, e os chamados abertos dele voltam para a fila.</span>
+      </div>
+      {notice && <p className="notice" role="status">{notice}</p>}
       {staff.isLoading ? <Loading /> : (
         <div className="table-wrap card">
           <table className="table">
-            <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th></tr></thead>
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th /></tr></thead>
             <tbody>
               {staff.data?.map((u) => (
-                <tr key={u.id}><td>{u.name}</td><td>{u.email}</td><td>{ROLE_LABEL[u.role]}</td></tr>
+                <MemberRow key={u.id} member={u} isMe={u.id === user?.id} onReleased={setNotice} />
               ))}
             </tbody>
           </table>

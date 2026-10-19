@@ -60,6 +60,7 @@ export function describeEvent(type: EventType, from: string | null, to: string |
     case 'status':
       return `mudou o status: ${STATUS_LABEL[from as Status] ?? from} → ${STATUS_LABEL[to as Status] ?? to}`
     case 'atribuido':
+      if (from && !to) return `devolveu o chamado à fila (${from} foi desativado)`
       if (from) return `transferiu de ${from} para ${to}`
       return to === actor ? 'assumiu o chamado' : `atribuiu a ${to}`
     case 'mensagem':

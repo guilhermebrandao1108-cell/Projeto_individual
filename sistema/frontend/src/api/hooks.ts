@@ -29,11 +29,12 @@ export const useCategories = (includeInactive = false) =>
     queryFn: () => request<Category[]>(`/categories${query({ include_inactive: includeInactive })}`),
   })
 
-export const useStaff = (enabled: boolean) =>
+/** The team (the API never lists customers). Inactive members only for the team page. */
+export const useStaff = (enabled: boolean, includeInactive = false) =>
   useQuery({
-    queryKey: keys.staff,
+    queryKey: [...keys.staff, includeInactive],
     enabled,
-    queryFn: async () => (await request<User[]>('/users')).filter((u) => u.role !== 'cliente' && u.is_active),
+    queryFn: () => request<User[]>(`/users${query({ include_inactive: includeInactive })}`),
   })
 
 /** `range` null disables the query (e.g. no previous period when showing everything). */
@@ -91,6 +92,18 @@ export function useSaveCategory() {
     mutationFn: ({ id, ...data }: Partial<Category> & { id?: number }) =>
       id ? patch<Category>(`/categories/${id}`, data) : post<Category>('/categories', data),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.categories }),
+  })
+}
+
+export function useUpdateStaff() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number; is_active?: boolean; role?: Role }) =>
+      patch<{ user: User; released_tickets: number }>(`/users/${id}`, body),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: keys.staff })
+      client.invalidateQueries({ queryKey: ['tickets'] }) // released tickets changed owner
+    },
   })
 }
 

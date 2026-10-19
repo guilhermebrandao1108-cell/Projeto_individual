@@ -37,5 +37,6 @@ describe('describeEvent', () => {
     expect(describeEvent('atribuido', null, 'Lucas')).toBe('atribuiu a Lucas')
     expect(describeEvent('atribuido', 'Lucas', 'Marina')).toBe('transferiu de Lucas para Marina')
     expect(describeEvent('atribuido', null, 'Lucas', 'Lucas')).toBe('assumiu o chamado')
+    expect(describeEvent('atribuido', 'Lucas', null)).toBe('devolveu o chamado à fila (Lucas foi desativado)')
   })
 })
