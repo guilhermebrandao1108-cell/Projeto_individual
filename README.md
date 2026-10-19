@@ -7,6 +7,8 @@ Um sistema de gestão de chamados construído a partir de evidência. Antes de e
 | 1. Estudo de caso: a dor existe? | [`analise/`](analise/) | ✅ Concluída |
 | 2. Sistema de gestão de chamados | [`sistema/`](sistema/) | ✅ API FastAPI + interface React, 112 testes (unitários, API e ponta a ponta) |
 
+**Tecnologias:** Python (pandas, NumPy, matplotlib, Jupyter) · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL/SQLite, JWT · React 19, TypeScript, TanStack Query, Vite · pytest, Vitest, Playwright · GitHub Actions
+
 ## Etapa 1 — o que os dados mostram
 
 | | |
@@ -39,20 +41,54 @@ O sistema transforma cada evidência da análise numa regra de negócio, como mo
 
 | Evidência | Requisito do sistema |
 |---|---|
-| +4,83 pp de não resolução acima de 7 dias | Prazos (SLA) configuráveis por fila, com alerta antes do vencimento |
+| +4,83 pp de não resolução acima de 7 dias | Prazos (SLA) configuráveis por fila, com alerta por e-mail antes do vencimento |
 | Respostas muito rápidas também falham | Separar “respondido” de “solução confirmada pelo cliente” |
 | 77,7% já tinham procurado a empresa antes | Histórico único de interações por cliente |
 | Desempenho varia por empresa e tipo de problema | Triagem por categoria e atribuição de responsável |
 | 67% dos casos ficam sem avaliação | Pesquisa de satisfação no encerramento |
 
+## Como as partes se conectam
+
+```mermaid
+flowchart LR
+    subgraph E1["Etapa 1 · analise/"]
+        RAW[("Consumidor.gov.br<br/>2,3 mi de reclamações")] --> PERM["Teste de permutação<br/>estratificado"]
+        PERM --> REQ["Evidências →<br/>requisitos"]
+    end
+    subgraph E2["Etapa 2 · sistema/"]
+        WEB["React<br/>cliente · atendente · gestor"] -->|"/api"| API["FastAPI<br/>domínio · serviços"]
+        API --> DB[("SQLite / PostgreSQL<br/>migrações Alembic")]
+        API --> MAIL["Avisos de prazo<br/>por e-mail"]
+    end
+    REQ -->|"SLA por fila, confirmação<br/>pelo cliente, métricas"| API
+    API -->|"export.csv"| PILOTO["python -m atendimento piloto<br/>mesmo teste, dados do sistema"]
+    PILOTO -.->|"valida no piloto"| REQ
+```
+
+## Rodar o sistema
+
+Requer Python 3.11+ e Node.js 20+. Em dois terminais:
+
+```powershell
+# 1. API (sistema/backend)
+py -m venv .venv; .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m app.seed --reset          # banco + dados de demonstração
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+
+# 2. Interface (sistema/frontend)
+npm install; npm run dev                                 # http://localhost:5173
+```
+
+Na tela de login, os botões **Cliente**, **Atendente** e **Gestor** entram com as contas de demonstração. Os detalhes estão em [`sistema/README.md`](sistema/README.md), e a reprodução da análise, em [`analise/README.md`](analise/README.md).
+
 ## Estrutura do repositório
 
 ```
 projeto/
-├── README.md        visão geral (este arquivo)
-├── analise/         Etapa 1: pacote Python, testes, dados, figuras e relatórios
-└── sistema/         Etapa 2: gestão de chamados
-    ├── backend/     API FastAPI: domínio, serviços, rotas, migrações e testes
-    └── frontend/    interface React + TypeScript
-.github/workflows/   CI: análise, backend, frontend e testes de ponta a ponta a cada push
+├── README.md            visão geral (este arquivo)
+├── analise/             Etapa 1: pacote Python, notebook, testes, dados, figuras e relatórios
+├── sistema/             Etapa 2: gestão de chamados
+│   ├── backend/         API FastAPI: domínio, serviços, rotas, migrações e testes
+│   └── frontend/        interface React + TypeScript, testes unitários e de ponta a ponta
+└── .github/workflows/   CI a cada push: análise, backend (SQLite e PostgreSQL), frontend e ponta a ponta
 ```
