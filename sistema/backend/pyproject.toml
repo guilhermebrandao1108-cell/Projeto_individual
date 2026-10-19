@@ -1,0 +1,10 @@
+[project]
+name = "chamados"
+version = "0.1.0"
+description = "API de gestão de chamados com SLA, confirmação de solução e métricas"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
