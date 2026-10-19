@@ -122,6 +122,7 @@ label.check input { width: auto; }
 .table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .table.clickable tbody tr { cursor: pointer; }
 .table.clickable tbody tr:hover { background: #f8fbfc; }
+.pager { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 14px; }
 .show-sm { display: none; }
 .form-table input[type='number'] { max-width: 110px; }
 

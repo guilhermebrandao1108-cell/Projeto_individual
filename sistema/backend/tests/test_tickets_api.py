@@ -64,10 +64,12 @@ def test_internal_notes_are_hidden_from_customer(client, auth, open_ticket):
 def test_sla_at_risk_and_overdue_filters(client, auth, open_ticket, clock):
     t = open_ticket()
     clock.advance(hours=3, minutes=30)              # 87% of the 4h first-response window
-    assert client.get('/tickets?sla=em_risco', headers=auth['atendente']).json()[0]['id'] == t['id']
+    page = client.get('/tickets?sla=em_risco', headers=auth['atendente']).json()
+    assert [x['id'] for x in page['items']] == [t['id']] and page['open_at_risk'] == 1
     clock.advance(hours=1)
-    assert client.get('/tickets?sla=em_risco', headers=auth['atendente']).json() == []
-    assert client.get('/tickets?sla=vencido', headers=auth['atendente']).json()[0]['id'] == t['id']
+    assert client.get('/tickets?sla=em_risco', headers=auth['atendente']).json()['items'] == []
+    page = client.get('/tickets?sla=vencido', headers=auth['atendente']).json()
+    assert [x['id'] for x in page['items']] == [t['id']] and page['open_overdue'] == 1
 
 
 def test_queue_is_ordered_by_deadline(client, auth, open_ticket, db, clock):
@@ -78,14 +80,14 @@ def test_queue_is_ordered_by_deadline(client, auth, open_ticket, db, clock):
     slow = open_ticket()
     clock.advance(minutes=10)
     fast = open_ticket(category_id=urgent_queue.id, title='Não consigo entrar')
-    ids = [t['id'] for t in client.get('/tickets', headers=auth['atendente']).json()]
+    ids = [t['id'] for t in client.get('/tickets', headers=auth['atendente']).json()['items']]
     assert ids == [fast['id'], slow['id']]
 
 
 def test_search(client, auth, open_ticket):
     open_ticket()
     open_ticket(title='Produto chegou quebrado', description='A tela veio trincada na entrega.')
-    found = client.get('/tickets?q=trincada', headers=auth['atendente']).json()
+    found = client.get('/tickets?q=trincada', headers=auth['atendente']).json()['items']
     assert [t['title'] for t in found] == ['Produto chegou quebrado']
 
 
@@ -124,7 +126,7 @@ def test_resolution_sla_pauses_while_waiting_for_customer(client, auth, open_tic
     clock.advance(hours=60)                            # customer takes 60h: past the original deadline
     waiting = client.get(f"/tickets/{t['id']}", headers=auth['atendente']).json()
     assert waiting['sla']['resolution'] == 'pausado'
-    assert client.get('/tickets?sla=vencido', headers=auth['atendente']).json() == []
+    assert client.get('/tickets?sla=vencido', headers=auth['atendente']).json()['items'] == []
 
     t = client.post(f"/tickets/{t['id']}/messages", json={'body': 'Pedido 98765.'}, headers=auth['cliente']).json()
     assert t['status'] == 'em_atendimento'

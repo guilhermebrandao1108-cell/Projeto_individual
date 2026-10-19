@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, case, false, func, or_, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -31,18 +31,36 @@ class SlaView:
 
 
 def sla_view(t: Ticket, now: datetime) -> SlaView:
-    risk = settings.sla_risk_fraction
     return SlaView(
-        first_response=sla.state(t.created_at, t.first_response_due_at, t.first_response_at, now, risk),
+        first_response=sla.state(t.first_response_due_at, t.first_response_risk_at, t.first_response_at, now),
         first_response_due_at=t.first_response_due_at,
         # Resolution counts when a solution is proposed; a rejection clears it and the clock keeps running.
-        resolution=sla.state(t.created_at, t.resolution_due_at, t.resolved_at, now, risk, paused_at=t.sla_paused_at),
+        resolution=sla.state(t.resolution_due_at, t.resolution_risk_at, t.resolved_at, now, paused_at=t.sla_paused_at),
         resolution_due_at=t.resolution_due_at,
     )
 
 
-def _states(view: SlaView) -> tuple[sla.SlaState, sla.SlaState]:
-    return view.first_response, view.resolution
+# --- SLA in SQL: the same rule as domain.sla.state, as WHERE clauses ----------
+def _target_in(state: sla.SlaState, now: datetime, due, risk_at, met_at, paused_at=None):
+    met, pending = met_at.is_not(None), met_at.is_(None)
+    paused = and_(paused_at.is_not(None), paused_at <= due) if paused_at is not None else false()
+    running = and_(pending, ~paused) if paused_at is not None else pending
+    return {
+        sla.SlaState.CUMPRIDO: and_(met, met_at <= due),
+        sla.SlaState.VIOLADO: and_(met, met_at > due),
+        sla.SlaState.PAUSADO: and_(pending, paused),
+        sla.SlaState.VENCIDO: and_(running, due < now),
+        sla.SlaState.EM_RISCO: and_(running, due >= now, risk_at <= now),
+        sla.SlaState.NO_PRAZO: and_(running, risk_at > now),
+    }[state]
+
+
+def sla_condition(state: sla.SlaState, now: datetime):
+    """Tickets where either target (first response or resolution) is in `state`."""
+    return or_(
+        _target_in(state, now, Ticket.first_response_due_at, Ticket.first_response_risk_at, Ticket.first_response_at),
+        _target_in(state, now, Ticket.resolution_due_at, Ticket.resolution_risk_at, Ticket.resolved_at, Ticket.sla_paused_at),
+    )
 
 
 # --- helpers ------------------------------------------------------------------
@@ -55,6 +73,7 @@ def _set_status(db: Session, t: Ticket, actor: User, action: Action, now: dateti
     _event(db, t, actor, EventType.STATUS, now, t.status, new)
     if t.status == Status.AGUARDANDO_CLIENTE and t.sla_paused_at is not None:
         t.resolution_due_at, pause = sla.resume(t.resolution_due_at, t.sla_paused_at, now)
+        t.resolution_risk_at = sla.risk_point(t.created_at, t.resolution_due_at, settings.sla_risk_fraction)
         t.sla_paused_seconds += int(pause.total_seconds())
         t.sla_paused_at = None
     if new == Status.AGUARDANDO_CLIENTE:
@@ -83,28 +102,50 @@ def get_ticket(db: Session, user: User, ticket_id: int) -> Ticket:
     return t
 
 
-def list_tickets(db: Session, user: User, now: datetime, *, status: Status | None = None, category_id: int | None = None,
-                 assignee_id: int | None = None, unassigned: bool = False, sla_state: sla.SlaState | None = None,
-                 q: str | None = None) -> list[Ticket]:
-    stmt = select(Ticket)
+@dataclass(frozen=True)
+class TicketPage:
+    items: list[Ticket]
+    total: int
+    open_at_risk: int     # open tickets matching the scope filters, for the queue shortcuts
+    open_overdue: int
+
+
+def list_tickets(db: Session, user: User, now: datetime, *, status: Status | None = None, open_only: bool = False,
+                 category_id: int | None = None, assignee_id: int | None = None, unassigned: bool = False,
+                 sla_state: sla.SlaState | None = None, q: str | None = None, limit: int = 50, offset: int = 0) -> TicketPage:
+    """Filtering, ordering, counting and paging all happen in the database."""
+    scope = []
     if user.role == Role.CLIENTE:
-        stmt = stmt.where(Ticket.customer_id == user.id)
-    if status:
-        stmt = stmt.where(Ticket.status == status)
+        scope.append(Ticket.customer_id == user.id)
     if category_id:
-        stmt = stmt.where(Ticket.category_id == category_id)
+        scope.append(Ticket.category_id == category_id)
     if assignee_id:
-        stmt = stmt.where(Ticket.assignee_id == assignee_id)
+        scope.append(Ticket.assignee_id == assignee_id)
     if unassigned:
-        stmt = stmt.where(Ticket.assignee_id.is_(None))
+        scope.append(Ticket.assignee_id.is_(None))
     if q:
         like = f'%{q.strip()}%'
-        stmt = stmt.where(or_(Ticket.title.ilike(like), Ticket.description.ilike(like)))
-    tickets = list(db.scalars(stmt).unique())
-    if sla_state:  # computed field: filtered in Python (fine at this scale; see README for the SQL version)
-        tickets = [t for t in tickets if sla_state in _states(sla_view(t, now))]
-    # Work queue order: open first, then nearest deadline, then priority.
-    return sorted(tickets, key=lambda t: (t.status not in OPEN_STATUSES, t.resolution_due_at, PRIORITY_ORDER[t.priority]))
+        scope.append(or_(Ticket.title.ilike(like), Ticket.description.ilike(like)))
+
+    filters = list(scope)
+    if status:
+        filters.append(Ticket.status == status)
+    elif open_only:
+        filters.append(Ticket.status.in_(OPEN_STATUSES))
+    if sla_state:
+        filters.append(sla_condition(sla_state, now))
+
+    def count(*where) -> int:
+        return db.scalar(select(func.count(Ticket.id)).where(*where)) or 0
+
+    is_open = Ticket.status.in_(OPEN_STATUSES)
+    # Work queue order: open first, then nearest deadline, then priority (id breaks ties so pages are stable).
+    order = (case((is_open, 0), else_=1), Ticket.resolution_due_at,
+             case(*((Ticket.priority == p, rank) for p, rank in PRIORITY_ORDER.items())), Ticket.id)
+    items = list(db.scalars(select(Ticket).where(*filters).order_by(*order).limit(limit).offset(offset)).unique())
+    return TicketPage(items=items, total=count(*filters),
+                      open_at_risk=count(*scope, is_open, sla_condition(sla.SlaState.EM_RISCO, now)),
+                      open_overdue=count(*scope, is_open, sla_condition(sla.SlaState.VENCIDO, now)))
 
 
 # --- commands -----------------------------------------------------------------
@@ -115,9 +156,11 @@ def create_ticket(db: Session, customer: User, *, title: str, description: str, 
     category = db.get(Category, category_id)
     if category is None or not category.is_active:
         raise NotFound(f'Categoria {category_id} não encontrada')
-    due = sla.deadlines(now, category.first_response_hours, category.resolution_hours)
+    due = sla.deadlines(now, category.first_response_hours, category.resolution_hours, settings.sla_risk_fraction)
     t = Ticket(title=title, description=description, category=category, priority=priority, customer_id=customer.id,
-               status=Status.ABERTO, created_at=now, first_response_due_at=due.first_response, resolution_due_at=due.resolution)
+               status=Status.ABERTO, created_at=now,
+               first_response_due_at=due.first_response, first_response_risk_at=due.first_response_risk,
+               resolution_due_at=due.resolution, resolution_risk_at=due.resolution_risk)
     db.add(t)
     _event(db, t, customer, EventType.CRIADO, now, to=Status.ABERTO)
     db.commit()

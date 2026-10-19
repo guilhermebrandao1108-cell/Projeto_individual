@@ -104,6 +104,15 @@ class TicketSummary(ORM):
     sla: SlaOut
 
 
+class TicketPageOut(BaseModel):
+    items: list[TicketSummary]
+    total: int
+    limit: int
+    offset: int
+    open_at_risk: int
+    open_overdue: int
+
+
 class MessageOut(ORM):
     id: int
     author: UserBrief

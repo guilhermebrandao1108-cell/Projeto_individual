@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCategories, useCreateTicket, useTickets } from '../api/hooks'
 import type { Priority } from '../api/types'
 import { StatusBadge } from '../components/Badges'
-import { Empty, ErrorNote, Loading } from '../components/ui'
+import { Empty, ErrorNote, Loading, Pager } from '../components/ui'
 import { formatDateTime, PRIORITY_LABEL } from '../lib/format'
 
 export function MyTickets() {
-  const { data, isLoading, error } = useTickets()
+  const [offset, setOffset] = useState(0)
+  const { data: page, isLoading, error } = useTickets({ limit: 20, offset })
+  const data = page?.items
   const waitingMe = data?.filter((t) => t.status === 'resolvido' || t.status === 'aguardando_cliente') ?? []
 
   return (
@@ -55,6 +57,7 @@ export function MyTickets() {
           ))}
         </ul>
       )}
+      {page && <Pager total={page.total} limit={page.limit} offset={offset} onChange={setOffset} />}
     </>
   )
 }

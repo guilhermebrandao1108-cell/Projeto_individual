@@ -128,3 +128,14 @@ test('fila no celular não tem rolagem horizontal @mobile', async ({ page }) => 
   const overflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(overflows).toBe(false)
 })
+
+test('a fila é paginada no servidor', async ({ page }) => {
+  await loginAs(page, 'Atendente')
+  await page.getByRole('checkbox', { name: 'Só abertos' }).uncheck()   // demo data has more than one page in total
+  const pager = page.getByRole('navigation', { name: 'Paginação' })
+  await expect(pager.getByText(/^1–25 de \d+$/)).toBeVisible()
+  const firstId = await page.locator('tbody tr td').first().textContent()
+  await pager.getByRole('button', { name: 'Próxima →' }).click()
+  await expect(pager.getByText(/^26–\d+ de \d+$/)).toBeVisible()
+  await expect(page.locator('tbody tr td').first()).not.toHaveText(firstId!)
+})

@@ -35,4 +35,8 @@ def test_pause_migration_keeps_existing_tickets(tmp_path):
         migrate.upgrade(conn, '0002')
         row = conn.execute(text('SELECT sla_paused_at, sla_paused_seconds FROM tickets WHERE id = 1')).one()
         assert tuple(row) == (None, 0)
+
+        migrate.upgrade(conn, '0003')   # backfills the risk points with the application rule (80% of each window)
+        row = conn.execute(text('SELECT first_response_risk_at, resolution_risk_at FROM tickets WHERE id = 1')).one()
+        assert tuple(str(v)[:19] for v in row) == ('2026-01-01 00:48:00', '2026-01-01 01:36:00')
     engine.dispose()

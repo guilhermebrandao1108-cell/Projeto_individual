@@ -4,25 +4,28 @@ import { useCategories, useStaff, useTickets } from '../api/hooks'
 import type { SlaState, Status, TicketFilters } from '../api/types'
 import { useAuth } from '../auth/useAuth'
 import { PriorityBadge, SlaBadge, StatusBadge } from '../components/Badges'
-import { Empty, ErrorNote, Loading } from '../components/ui'
+import { Empty, ErrorNote, Loading, Pager } from '../components/ui'
 import { SLA_LABEL, STATUS_LABEL } from '../lib/format'
 
-const OPEN: Status[] = ['aberto', 'em_atendimento', 'aguardando_cliente']
+const PAGE_SIZE = 25
 
 export function Queue() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const categories = useCategories()
   const staff = useStaff(user?.role === 'gestor')
-  const [filters, setFilters] = useState<TicketFilters & { open: boolean }>({ open: true })
+  const [filters, setFilters] = useState<TicketFilters>({ open_only: true })
+  const [offset, setOffset] = useState(0)
   const q = useDeferredValue(filters.q)
-  const { open, ...apiFilters } = filters
-  const tickets = useTickets({ ...apiFilters, q })
+  // Filtering, counting and paging happen on the server (in SQL).
+  const tickets = useTickets({ ...filters, q, limit: PAGE_SIZE, offset })
 
-  const all = tickets.data ?? []
-  const shown = open && !filters.status ? all.filter((t) => OPEN.includes(t.status)) : all
-  const count = (state: SlaState) => all.filter((t) => OPEN.includes(t.status) && [t.sla.first_response, t.sla.resolution].includes(state)).length
-  const set = (patch: Partial<typeof filters>) => setFilters({ ...filters, ...patch })
+  const page = tickets.data
+  const shown = page?.items ?? []
+  const set = (patch: Partial<TicketFilters>) => {
+    setFilters({ ...filters, ...patch })
+    setOffset(0)
+  }
 
   return (
     <>
@@ -31,11 +34,11 @@ export function Queue() {
         <div className="row">
           <button className={`chip danger ${filters.sla === 'vencido' ? 'active' : ''}`}
                   onClick={() => set({ sla: filters.sla === 'vencido' ? undefined : 'vencido' })}>
-            {count('vencido')} vencidos
+            {page?.open_overdue ?? 0} vencidos
           </button>
           <button className={`chip warn ${filters.sla === 'em_risco' ? 'active' : ''}`}
                   onClick={() => set({ sla: filters.sla === 'em_risco' ? undefined : 'em_risco' })}>
-            {count('em_risco')} em risco
+            {page?.open_at_risk ?? 0} em risco
           </button>
         </div>
       </div>
@@ -79,7 +82,7 @@ export function Queue() {
           </label>
         )}
         <label className="check">
-          <input type="checkbox" checked={open} onChange={(e) => set({ open: e.target.checked })} />
+          <input type="checkbox" checked={!!filters.open_only} onChange={(e) => set({ open_only: e.target.checked })} />
           Só abertos
         </label>
       </div>
@@ -123,6 +126,7 @@ export function Queue() {
           </table>
         </div>
       )}
+      {page && <Pager total={page.total} limit={PAGE_SIZE} offset={offset} onChange={setOffset} />}
     </>
   )
 }

@@ -1,23 +1,28 @@
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, status
 
 from ..deps import DB, CurrentUser, Now, Staff
 from ..domain.sla import SlaState
 from ..models import Status
 from ..schemas import (ActionIn, AssignIn, ConfirmIn, MessageIn, RejectIn, ResolveIn, TicketCreate, TicketDetail,
-                       TicketSummary)
+                       TicketPageOut)
 from ..serializers import ticket_detail, ticket_summary
 from ..services import tickets as svc
 
 router = APIRouter(prefix='/tickets', tags=['tickets'])
 
 
-@router.get('', response_model=list[TicketSummary])
-def list_tickets(db: DB, user: CurrentUser, now: Now, status: Status | None = None, category_id: int | None = None,
-                 assignee_id: int | None = None, unassigned: bool = False, sla: SlaState | None = None, q: str | None = None):
+@router.get('', response_model=TicketPageOut)
+def list_tickets(db: DB, user: CurrentUser, now: Now, status: Status | None = None, open_only: bool = False,
+                 category_id: int | None = None, assignee_id: int | None = None, unassigned: bool = False,
+                 sla: SlaState | None = None, q: str | None = None,
+                 limit: Annotated[int, Query(ge=1, le=200)] = 50, offset: Annotated[int, Query(ge=0)] = 0):
     """Customers see their own tickets; staff see the whole queue, ordered by nearest deadline."""
-    found = svc.list_tickets(db, user, now, status=status, category_id=category_id, assignee_id=assignee_id,
-                             unassigned=unassigned, sla_state=sla, q=q)
-    return [ticket_summary(t, now) for t in found]
+    page = svc.list_tickets(db, user, now, status=status, open_only=open_only, category_id=category_id,
+                            assignee_id=assignee_id, unassigned=unassigned, sla_state=sla, q=q, limit=limit, offset=offset)
+    return TicketPageOut(items=[ticket_summary(t, now) for t in page.items], total=page.total, limit=limit, offset=offset,
+                         open_at_risk=page.open_at_risk, open_overdue=page.open_overdue)
 
 
 @router.post('', response_model=TicketDetail, status_code=status.HTTP_201_CREATED)

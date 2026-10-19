@@ -15,6 +15,25 @@ export function Empty({ children }: { children: ReactNode }) {
   return <div className="empty">{children}</div>
 }
 
+/** "1–25 de 213" with previous/next buttons; hidden when everything fits in one page. */
+export function Pager({ total, limit, offset, onChange }: { total: number; limit: number; offset: number; onChange: (offset: number) => void }) {
+  if (total <= limit) return null
+  const last = Math.min(offset + limit, total)
+  return (
+    <nav className="pager" aria-label="Paginação">
+      <button className="btn small" disabled={offset === 0} onClick={() => onChange(Math.max(0, offset - limit))}>
+        ← Anterior
+      </button>
+      <span className="muted small">
+        {offset + 1}–{last} de {total}
+      </span>
+      <button className="btn small" disabled={last >= total} onClick={() => onChange(offset + limit)}>
+        Próxima →
+      </button>
+    </nav>
+  )
+}
+
 export function Loading() {
   return <p className="muted">Carregando…</p>
 }

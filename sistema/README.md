@@ -4,8 +4,8 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Parte | Pasta | Status |
 |---|---|---|
-| API (backend) | [`backend/`](backend/) | ✅ 61 testes (pytest) · migrações Alembic |
-| Interface (frontend) | [`frontend/`](frontend/) | ✅ 13 testes (Vitest) + 7 de ponta a ponta (Playwright) |
+| API (backend) | [`backend/`](backend/) | ✅ 70 testes (pytest) · migrações Alembic |
+| Interface (frontend) | [`frontend/`](frontend/) | ✅ 15 testes (Vitest) + 8 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
 | Fila da equipe | Painel do gestor |
@@ -69,7 +69,8 @@ backend/app/
 └── seed.py            dados de demonstração gerados pelos próprios serviços
 backend/migrations/versions/
 ├── 0001_esquema_inicial.py
-└── 0002_pausa_do_sla_aguardando_cliente.py
+├── 0002_pausa_do_sla_aguardando_cliente.py
+└── 0003_pontos_de_risco_do_sla.py   migração de dados: preenche os chamados existentes
 ```
 
 As dependências vão sempre para dentro: `routers → services → domain`. O domínio não conhece o banco nem o FastAPI. O relógio (`get_now`) é uma dependência injetável, e é isso que permite testar regras de SLA avançando o tempo, sem `sleep`.
@@ -103,9 +104,9 @@ Para começar com um banco vazio, sem dados de demonstração, use `.\.venv\Scri
 Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gestor** na tela de login. As contas de demonstração são `ana@demo.com`, `lucas@demo.com` e `gestor@demo.com`, todas com a senha `demo12345`. A documentação interativa da API fica em http://localhost:8000/docs.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest        # backend: 61 testes, ~15 s
-npm test                                     # frontend (em sistema/frontend): 13 testes
-npm run e2e                                  # ponta a ponta: sobe API + interface e roda 7 fluxos no navegador
+.\.venv\Scripts\python.exe -m pytest        # backend: 70 testes, ~20 s
+npm test                                     # frontend (em sistema/frontend): 15 testes
+npm run e2e                                  # ponta a ponta: sobe API + interface e roda 8 fluxos no navegador
 ```
 
 O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da análise, as migrações (`alembic upgrade head` + `alembic check`), os testes e o seed do backend, o lint, os testes e o build do frontend e, por último, os testes de ponta a ponta no Chromium.
@@ -123,7 +124,7 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 | Método | Rota | Quem |
 |---|---|---|
 | POST | `/auth/register`, `/auth/token` · GET `/auth/me` | público / logado |
-| GET | `/tickets?status=&category_id=&assignee_id=&unassigned=&sla=&q=` | todos (cliente vê só os próprios) |
+| GET | `/tickets?status=&open_only=&category_id=&assignee_id=&unassigned=&sla=&q=&limit=&offset=` → `{items, total, open_at_risk, open_overdue}` | todos (cliente vê só os próprios) |
 | POST | `/tickets` | cliente |
 | GET | `/tickets/{id}` | dono ou equipe |
 | POST | `/tickets/{id}/messages` | dono ou equipe (`internal` só para a equipe) |
@@ -139,5 +140,5 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 - **O SLA de resolução pausa enquanto o chamado aguarda o cliente.** Quando o cliente responde, o prazo avança pelo tempo de espera, e o total fica registrado em `sla_paused_seconds`. Se o prazo já tinha vencido quando a pausa começou, o chamado continua vencido. A primeira resposta não pausa, porque pedir informação já conta como resposta.
 - **Uma mudança de SLA não altera chamados já abertos.** O prazo combinado na abertura é mantido, e há um teste que garante isso.
 - **O SLA de resolução conta a proposta de solução,** não a confirmação. Se o cliente rejeitar, a proposta deixa de valer e o prazo continua correndo.
-- **Na fila, o filtro por estado de SLA é calculado em Python.** Com volume real, ele vai para SQL, comparando `*_due_at` com `now` e com as colunas `*_at`.
-- **Próximos passos:** PostgreSQL via Docker Compose (as migrações já são compatíveis), notificação por e-mail quando um chamado entra "em risco" e paginação da fila.
+- **A fila é filtrada, ordenada, contada e paginada no banco.** Para isso, cada prazo guarda também o seu *ponto de risco* (`*_risk_at`, 80% da janela). Assim, todos os estados de SLA viram comparações simples de data, iguais no Python (`domain/sla.state`) e no SQL (`services/tickets.sla_condition`), com índice nas colunas de prazo. O teste [`test_queue.py`](backend/tests/test_queue.py) verifica, chamado por chamado e em vários instantes, que as duas versões classificam tudo igual. A migração 0003 calcula o ponto de risco dos chamados que já existiam.
+- **Próximos passos:** PostgreSQL via Docker Compose (as migrações já são compatíveis), notificação por e-mail quando um chamado entra "em risco" e agregações do painel em SQL (hoje calculadas em Python).

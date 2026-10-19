@@ -30,7 +30,8 @@ def test_inactive_user_is_rejected(client, auth, users, db):
 def test_customer_sees_only_own_tickets(client, auth, open_ticket):
     mine = open_ticket()
     theirs = open_ticket(headers=auth['outro_cliente'])
-    assert [t['id'] for t in client.get('/tickets', headers=auth['cliente']).json()] == [mine['id']]
+    page = client.get('/tickets', headers=auth['cliente']).json()
+    assert [t['id'] for t in page['items']] == [mine['id']] and page['total'] == 1
     assert client.get(f"/tickets/{theirs['id']}", headers=auth['cliente']).status_code == 404  # not 403: no id leak
     assert client.post(f"/tickets/{theirs['id']}/messages", json={'body': 'oi'}, headers=auth['cliente']).status_code == 404
 

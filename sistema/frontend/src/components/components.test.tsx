@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import type { Sla } from '../api/types'
 import { SlaBadge } from './Badges'
-import { Rating } from './ui'
+import { Pager, Rating } from './ui'
 
 const sla = (over: Partial<Sla>): Sla => ({
   first_response: 'no_prazo',
@@ -56,5 +56,21 @@ describe('Rating', () => {
     expect(screen.getByText('4')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('radio', { name: '4 de 5' }))
     expect(screen.getByText('sem nota')).toBeInTheDocument()
+  })
+})
+
+describe('Pager', () => {
+  it('shows the range and moves by one page', async () => {
+    const calls: number[] = []
+    render(<Pager total={53} limit={25} offset={25} onChange={(o) => calls.push(o)} />)
+    expect(screen.getByText('26–50 de 53')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Próxima →' }))
+    await userEvent.click(screen.getByRole('button', { name: '← Anterior' }))
+    expect(calls).toEqual([50, 0])
+  })
+
+  it('is hidden when everything fits in one page', () => {
+    const { container } = render(<Pager total={10} limit={25} offset={0} onChange={() => {}} />)
+    expect(container).toBeEmptyDOMElement()
   })
 })

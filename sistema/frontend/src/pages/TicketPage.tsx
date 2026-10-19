@@ -97,7 +97,8 @@ function Composer({ ticket, user }: { ticket: TicketDetail; user: User }) {
   const isStaff = user.role !== 'cliente'
   const can = (a: string) => ticket.allowed_actions.includes(a as never)
   const busy = send.isPending || act.isPending || resolve.isPending
-  const clear = { onSuccess: () => { setBody(''); setInternal(false) } }
+  // Clear only if the box still holds what was sent: the user may already be typing the next message.
+  const clearIf = (sent: string) => ({ onSuccess: () => { setBody((b) => (b.trim() === sent ? '' : b)); setInternal(false) } })
   const text = body.trim()
 
   return (
@@ -117,17 +118,17 @@ function Composer({ ticket, user }: { ticket: TicketDetail; user: User }) {
           )}
           {can('pedir_info') && (
             <button className="btn" disabled={busy || !text || internal} title="Envia a mensagem e aguarda o cliente"
-                    onClick={() => act.mutate({ action: 'pedir_info', message: text }, clear)}>
+                    onClick={() => act.mutate({ action: 'pedir_info', message: text }, clearIf(text))}>
               Pedir informações
             </button>
           )}
           {can('propor_solucao') && (
             <button className="btn success" disabled={busy || text.length < 5 || internal} title="Envia a solução; o cliente confirma se resolveu"
-                    onClick={() => resolve.mutate({ message: text }, clear)}>
+                    onClick={() => resolve.mutate({ message: text }, clearIf(text))}>
               Propor solução
             </button>
           )}
-          <button className="btn primary" disabled={busy || !text} onClick={() => send.mutate({ body: text, internal }, clear)}>
+          <button className="btn primary" disabled={busy || !text} onClick={() => send.mutate({ body: text, internal }, clearIf(text))}>
             Enviar
           </button>
         </div>

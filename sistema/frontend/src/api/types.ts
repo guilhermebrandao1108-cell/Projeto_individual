@@ -100,9 +100,21 @@ export interface MetricsOverview extends Metrics {
 
 export interface TicketFilters {
   status?: Status
+  open_only?: boolean
   category_id?: number
   assignee_id?: number
   unassigned?: boolean
   sla?: SlaState
   q?: string
+  limit?: number
+  offset?: number
+}
+
+export interface TicketPage {
+  items: TicketSummary[]
+  total: number
+  limit: number
+  offset: number
+  open_at_risk: number
+  open_overdue: number
 }

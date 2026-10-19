@@ -77,8 +77,10 @@ class Ticket(Base):
     assignee_id: Mapped[int | None] = mapped_column(ForeignKey('users.id'), index=True)
 
     created_at: Mapped[datetime] = mapped_column(UTCDateTime)
-    first_response_due_at: Mapped[datetime] = mapped_column(UTCDateTime)
-    resolution_due_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    first_response_due_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    first_response_risk_at: Mapped[datetime] = mapped_column(UTCDateTime)  # risk point, see domain/sla.py
+    resolution_due_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    resolution_risk_at: Mapped[datetime] = mapped_column(UTCDateTime)
     first_response_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime)   # last solution proposal
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)     # customer confirmation

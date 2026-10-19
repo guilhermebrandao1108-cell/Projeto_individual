@@ -1,7 +1,7 @@
 // Server state lives in TanStack Query: components never fetch directly.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { patch, post, query, request } from './client'
-import type { Action, Category, MetricsOverview, Priority, Role, TicketDetail, TicketFilters, TicketSummary, User } from './types'
+import type { Action, Category, MetricsOverview, Priority, Role, TicketDetail, TicketFilters, TicketPage, User } from './types'
 
 export const keys = {
   tickets: (filters?: TicketFilters) => ['tickets', filters ?? {}] as const,
@@ -15,8 +15,9 @@ export const keys = {
 export const useTickets = (filters: TicketFilters = {}) =>
   useQuery({
     queryKey: keys.tickets(filters),
-    queryFn: () => request<TicketSummary[]>(`/tickets${query({ ...filters })}`),
+    queryFn: () => request<TicketPage>(`/tickets${query({ ...filters })}`),
     refetchInterval: 60_000,
+    placeholderData: keepPreviousData, // keep the current page visible while the next one loads
   })
 
 export const useTicket = (id: number) =>

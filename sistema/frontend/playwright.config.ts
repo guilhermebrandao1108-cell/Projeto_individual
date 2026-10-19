@@ -17,6 +17,7 @@ export default defineConfig({
     baseURL: `http://localhost:${WEB_PORT}`,
     locale: 'pt-BR',
     trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     // Locally on Windows use the installed Edge; elsewhere (and in CI) Playwright's Chromium.
     channel: process.env.PW_CHANNEL ?? (isWindows && !process.env.CI ? 'msedge' : undefined),
   },

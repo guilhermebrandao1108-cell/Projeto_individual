@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.domain import DomainError, PermissionDenied
-from app.domain.sla import SlaState, deadlines, resume, state
+from app.domain.sla import SlaState, deadlines, resume, risk_point, state
 from app.domain.workflow import Action, allowed_actions, next_status
 from app.models import Role, Status
 
@@ -52,9 +52,15 @@ class TestWorkflow:
 
 
 class TestSla:
-    def test_deadlines(self):
-        d = deadlines(T0, 4, 48)
+    def test_deadlines_and_risk_points(self):
+        d = deadlines(T0, 4, 48, risk_fraction=.75)
         assert (d.first_response, d.resolution) == (T0 + 4 * H, T0 + 48 * H)
+        assert (d.first_response_risk, d.resolution_risk) == (T0 + 3 * H, T0 + 36 * H)
+
+    @pytest.mark.parametrize('fraction', [0, -.1, 1.5])
+    def test_invalid_risk_fraction(self, fraction):
+        with pytest.raises(ValueError):
+            risk_point(T0, T0 + H, fraction)
 
     @pytest.mark.parametrize('first,resolution', [(0, 10), (10, 5)])
     def test_invalid_policy(self, first, resolution):
@@ -63,7 +69,7 @@ class TestSla:
 
     @pytest.mark.parametrize('now_h,met_h,expected', [
         (1, None, SlaState.NO_PRAZO),
-        (8, None, SlaState.EM_RISCO),     # 80% of 10h elapsed
+        (8, None, SlaState.EM_RISCO),     # at the risk point (80% of 10h)
         (11, None, SlaState.VENCIDO),
         (11, 9, SlaState.CUMPRIDO),
         (11, 10, SlaState.CUMPRIDO),      # exactly on the deadline counts as met
@@ -71,13 +77,13 @@ class TestSla:
     ])
     def test_states(self, now_h, met_h, expected):
         met = None if met_h is None else T0 + met_h * H
-        assert state(T0, T0 + 10 * H, met, T0 + now_h * H, risk_fraction=.8) == expected
+        assert state(T0 + 10 * H, T0 + 8 * H, met, T0 + now_h * H) == expected
 
     def test_paused_clock_is_not_overdue(self):
-        assert state(T0, T0 + 10 * H, None, T0 + 30 * H, paused_at=T0 + 2 * H) == SlaState.PAUSADO
+        assert state(T0 + 10 * H, T0 + 8 * H, None, T0 + 30 * H, paused_at=T0 + 2 * H) == SlaState.PAUSADO
 
     def test_pause_never_hides_a_breach(self):
-        assert state(T0, T0 + 10 * H, None, T0 + 30 * H, paused_at=T0 + 12 * H) == SlaState.VENCIDO
+        assert state(T0 + 10 * H, T0 + 8 * H, None, T0 + 30 * H, paused_at=T0 + 12 * H) == SlaState.VENCIDO
 
     def test_resume_moves_deadline_by_the_pause(self):
         due, pause = resume(T0 + 10 * H, paused_at=T0 + 2 * H, now=T0 + 7 * H)
