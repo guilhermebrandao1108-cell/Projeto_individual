@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 
 from .config import settings
 from .domain import DomainError, PermissionDenied
+from .ratelimit import TooManyAttempts
 from .routers import auth, categories, metrics, tickets, users
 from .services import NotFound
 
@@ -27,6 +28,12 @@ def _error(code: int):
 app.add_exception_handler(DomainError, _error(status.HTTP_409_CONFLICT))
 app.add_exception_handler(PermissionDenied, _error(status.HTTP_403_FORBIDDEN))
 app.add_exception_handler(NotFound, _error(status.HTTP_404_NOT_FOUND))
+
+
+@app.exception_handler(TooManyAttempts)
+async def too_many_attempts(_: Request, exc: TooManyAttempts) -> JSONResponse:
+    return JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS, content={'detail': str(exc)},
+                        headers={'Retry-After': str(exc.retry_after_seconds)})
 
 
 @app.get('/health', tags=['health'])

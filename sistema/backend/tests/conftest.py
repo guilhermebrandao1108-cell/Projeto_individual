@@ -13,6 +13,7 @@ from app.database import Base, get_db  # noqa: E402
 from app.deps import get_now  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Category, Role, User  # noqa: E402
+from app.ratelimit import login_throttle  # noqa: E402
 from app.security import create_access_token, hash_password  # noqa: E402
 
 T0 = datetime(2026, 3, 2, 9, 0, tzinfo=timezone.utc)
@@ -46,6 +47,7 @@ def db():
 def client(db, clock):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_now] = lambda: clock.now
+    login_throttle.reset()
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

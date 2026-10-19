@@ -4,7 +4,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Parte | Pasta | Status |
 |---|---|---|
-| API (backend) | [`backend/`](backend/) | ✅ 55 testes (pytest) · migrações Alembic |
+| API (backend) | [`backend/`](backend/) | ✅ 61 testes (pytest) · migrações Alembic |
 | Interface (frontend) | [`frontend/`](frontend/) | ✅ 13 testes (Vitest) + 7 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
@@ -44,6 +44,8 @@ ABERTO ──primeira resposta / iniciar──▶ EM_ATENDIMENTO ◀──client
 | **gestor** | tudo do atendente, mais transferir chamados, configurar filas e SLA, criar usuários e ver métricas |
 
 Clientes recebem 404, e não 403, ao tentar acessar chamados de outra pessoa, para não revelar quais IDs existem. A equipe não consegue fechar um chamado em nome do cliente.
+
+**Login protegido contra força bruta:** depois de 5 senhas erradas em 15 minutos para a mesma conta e o mesmo IP, o login responde 429 com `Retry-After`, mesmo que a senha seguinte esteja certa. E-mail inexistente e senha errada recebem a mesma mensagem, no mesmo tempo, para não revelar quais contas existem ([`ratelimit.py`](backend/app/ratelimit.py)). Como o contador fica na memória, ele vale para uma instância só; com várias instâncias, iria para o Redis.
 
 ## Arquitetura do backend
 
@@ -101,7 +103,7 @@ Para começar com um banco vazio, sem dados de demonstração, use `.\.venv\Scri
 Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gestor** na tela de login. As contas de demonstração são `ana@demo.com`, `lucas@demo.com` e `gestor@demo.com`, todas com a senha `demo12345`. A documentação interativa da API fica em http://localhost:8000/docs.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest        # backend: 55 testes, ~12 s
+.\.venv\Scripts\python.exe -m pytest        # backend: 61 testes, ~15 s
 npm test                                     # frontend (em sistema/frontend): 13 testes
 npm run e2e                                  # ponta a ponta: sobe API + interface e roda 7 fluxos no navegador
 ```
