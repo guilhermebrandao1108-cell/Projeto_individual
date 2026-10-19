@@ -4,7 +4,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Parte | Pasta | Status |
 |---|---|---|
-| API (backend) | [`backend/`](backend/) | ✅ 80 testes (pytest), em SQLite e PostgreSQL 17 · migrações Alembic |
+| API (backend) | [`backend/`](backend/) | ✅ 85 testes (pytest), em SQLite e PostgreSQL 17 · migrações Alembic |
 | Interface (frontend) | [`frontend/`](frontend/) | ✅ 18 testes (Vitest) + 9 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
@@ -18,7 +18,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Evidência do estudo | Regra implementada | Onde |
 |---|---|---|
-| +4,83 pp de não resolução acima de 7 dias | SLA de primeira resposta e de resolução **por fila**, com estado `em_risco` antes de vencer. O prazo de resolução **pausa enquanto o chamado aguarda o cliente**, mas a pausa nunca apaga um atraso que já aconteceu | [`domain/sla.py`](backend/app/domain/sla.py) |
+| +4,83 pp de não resolução acima de 7 dias | SLA de primeira resposta e de resolução **por fila**, com estado `em_risco` antes de vencer e **aviso por e-mail** ao responsável. O prazo de resolução **pausa enquanto o chamado aguarda o cliente**, mas a pausa nunca apaga um atraso que já aconteceu | [`domain/sla.py`](backend/app/domain/sla.py) |
 | Responder ≠ resolver (respostas em 0–2 dias também falham) | A equipe só **propõe** a solução (`resolvido`). O chamado só fecha quando o **cliente confirma**, e se ele rejeitar, o chamado reabre | [`domain/workflow.py`](backend/app/domain/workflow.py) |
 | 77,7% já tinham procurado a empresa | Histórico único: mensagens, notas internas e trilha de auditoria de cada evento | [`models.py`](backend/app/models.py) |
 | Desempenho varia por empresa e problema | Filas (categorias), responsável, contagem de transferências e fila ordenada pelo prazo | [`services/tickets.py`](backend/app/services/tickets.py) |
@@ -69,11 +69,14 @@ backend/app/
 ├── deps.py            sessão, usuário logado, perfis e relógio injetável
 ├── security.py        hash scrypt e JWT
 ├── migrate.py         Alembic programático (usado pelo seed e pelos testes)
+├── mailer.py          envio de e-mail (terminal em dev, SMTP em produção)
+├── notify.py          comando dos avisos de prazo
 └── seed.py            dados de demonstração gerados pelos próprios serviços
 backend/migrations/versions/
 ├── 0001_esquema_inicial.py
 ├── 0002_pausa_do_sla_aguardando_cliente.py
-└── 0003_pontos_de_risco_do_sla.py   migração de dados: preenche os chamados existentes
+├── 0003_pontos_de_risco_do_sla.py   migração de dados: preenche os chamados existentes
+└── 0004_avisos_de_prazo.py
 ```
 
 As dependências vão sempre para dentro: `routers → services → domain`. O domínio não conhece o banco nem o FastAPI. O relógio (`get_now`) é uma dependência injetável, e é isso que permite testar regras de SLA avançando o tempo, sem `sleep`.
@@ -107,7 +110,7 @@ Para começar com um banco vazio, sem dados de demonstração, use `.\.venv\Scri
 Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gestor** na tela de login. As contas de demonstração são `ana@demo.com`, `lucas@demo.com` e `gestor@demo.com`, todas com a senha `demo12345`. A documentação interativa da API fica em http://localhost:8000/docs.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest        # backend: 80 testes, ~25 s
+.\.venv\Scripts\python.exe -m pytest        # backend: 85 testes, ~25 s
 npm test                                     # frontend (em sistema/frontend): 18 testes
 npm run e2e                                  # ponta a ponta: sobe API + interface e roda 9 fluxos no navegador
 ```
@@ -130,6 +133,19 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 | `TOKEN_MINUTES` | `480` | Validade do token |
 | `CORS_ORIGINS` | `http://localhost:5173` | Origem do frontend (Vite) |
 | `SLA_RISK_FRACTION` | `0.8` | A partir de quanto do prazo o chamado fica "em risco" |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | vazio (imprime no terminal) | Envio dos avisos de prazo por SMTP com STARTTLS |
+| `APP_URL` | `http://localhost:5173` | Endereço da interface, usado nos links dos e-mails |
+
+## Avisos de prazo por e-mail
+
+`python -m app.notify` envia um e-mail quando um prazo de primeira resposta ou de resolução entra **em risco** (a partir de 80% da janela) e outro quando **vence**. O aviso vai para o responsável; chamados sem responsável, ou com responsável desativado, avisam os gestores. Cada aviso fica registrado na tabela `notifications`, com uma chave única por chamado, tipo, prazo e destinatário. Por isso, o comando pode rodar quantas vezes for preciso sem repetir e-mails. Se uma pausa mover o prazo, o novo prazo pode gerar um novo aviso. Prazos pausados, já cumpridos ou de chamados fechados não geram aviso ([`services/notifications.py`](backend/app/services/notifications.py)).
+
+```powershell
+.\.venv\Scripts\python.exe -m app.notify              # uma verificação (agende a cada 5 min)
+.\.venv\Scripts\python.exe -m app.notify --every 300  # ou deixe rodando
+```
+
+Sem `SMTP_HOST`, os e-mails são impressos no terminal, o que serve para desenvolvimento. Para agendar no Windows, use `schtasks /create /sc minute /mo 5 /tn ChamadosAvisos /tr "<caminho>\.venv\Scripts\python.exe -m app.notify"`; no Linux, use uma linha no `cron`.
 
 ## Endpoints
 
@@ -155,4 +171,4 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 - **Uma mudança de SLA não altera chamados já abertos.** O prazo combinado na abertura é mantido, e há um teste que garante isso.
 - **O SLA de resolução conta a proposta de solução,** não a confirmação. Se o cliente rejeitar, a proposta deixa de valer e o prazo continua correndo.
 - **A fila é filtrada, ordenada, contada e paginada no banco.** Para isso, cada prazo guarda também o seu *ponto de risco* (`*_risk_at`, 80% da janela). Assim, todos os estados de SLA viram comparações simples de data, iguais no Python (`domain/sla.state`) e no SQL (`services/tickets.sla_condition`), com índice nas colunas de prazo. O teste [`test_queue.py`](backend/tests/test_queue.py) verifica, chamado por chamado e em vários instantes, que as duas versões classificam tudo igual. A migração 0003 calcula o ponto de risco dos chamados que já existiam.
-- **Próximos passos:** notificação por e-mail quando um chamado entra "em risco" e agregações do painel em SQL (hoje calculadas em Python).
+- **Próximos passos:** agregações do painel em SQL (hoje calculadas em Python) e anexos nos chamados.

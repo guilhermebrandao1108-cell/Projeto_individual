@@ -14,6 +14,13 @@ class Settings:
     cors_origins: list[str] = field(default_factory=lambda: os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(','))
     # Fraction of the SLA window after which an unmet target is flagged "em risco".
     sla_risk_fraction: float = float(os.getenv('SLA_RISK_FRACTION', '0.8'))
+    # Deadline e-mails (python -m app.notify). Without SMTP_HOST, messages are printed instead of sent.
+    app_url: str = os.getenv('APP_URL', 'http://localhost:5173')
+    smtp_host: str = os.getenv('SMTP_HOST', '')
+    smtp_port: int = int(os.getenv('SMTP_PORT', '587'))
+    smtp_user: str = os.getenv('SMTP_USER', '')
+    smtp_password: str = os.getenv('SMTP_PASSWORD', '')
+    mail_from: str = os.getenv('MAIL_FROM', 'Chamados <nao-responda@localhost>')
 
 
 settings = Settings()

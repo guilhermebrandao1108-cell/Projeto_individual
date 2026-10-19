@@ -41,7 +41,7 @@ def sla_view(t: Ticket, now: datetime) -> SlaView:
 
 
 # --- SLA in SQL: the same rule as domain.sla.state, as WHERE clauses ----------
-def _target_in(state: sla.SlaState, now: datetime, due, risk_at, met_at, paused_at=None):
+def target_condition(state: sla.SlaState, now: datetime, due, risk_at, met_at, paused_at=None):
     met, pending = met_at.is_not(None), met_at.is_(None)
     paused = and_(paused_at.is_not(None), paused_at <= due) if paused_at is not None else false()
     running = and_(pending, ~paused) if paused_at is not None else pending
@@ -58,8 +58,8 @@ def _target_in(state: sla.SlaState, now: datetime, due, risk_at, met_at, paused_
 def sla_condition(state: sla.SlaState, now: datetime):
     """Tickets where either target (first response or resolution) is in `state`."""
     return or_(
-        _target_in(state, now, Ticket.first_response_due_at, Ticket.first_response_risk_at, Ticket.first_response_at),
-        _target_in(state, now, Ticket.resolution_due_at, Ticket.resolution_risk_at, Ticket.resolved_at, Ticket.sla_paused_at),
+        target_condition(state, now, Ticket.first_response_due_at, Ticket.first_response_risk_at, Ticket.first_response_at),
+        target_condition(state, now, Ticket.resolution_due_at, Ticket.resolution_risk_at, Ticket.resolved_at, Ticket.sla_paused_at),
     )
 
 

@@ -2,7 +2,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, CheckConstraint, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -97,6 +97,19 @@ class Ticket(Base):
     assignee: Mapped[User | None] = relationship(foreign_keys=[assignee_id], lazy='joined')
     messages: Mapped[list['Message']] = relationship(back_populates='ticket', order_by='Message.id', cascade='all, delete-orphan')
     events: Mapped[list['TicketEvent']] = relationship(back_populates='ticket', order_by='TicketEvent.id', cascade='all, delete-orphan')
+
+
+class Notification(Base):
+    """A deadline alert already sent. The unique key makes the notifier idempotent: running it
+    again never repeats an alert, but a deadline moved by a pause can be alerted again."""
+    __tablename__ = 'notifications'
+    __table_args__ = (UniqueConstraint('ticket_id', 'kind', 'due_at', 'recipient_id'),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticket_id: Mapped[int] = mapped_column(ForeignKey('tickets.id'), index=True)
+    recipient_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    kind: Mapped[str] = mapped_column(String(48))       # e.g. "resolucao_em_risco"
+    due_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    sent_at: Mapped[datetime] = mapped_column(UTCDateTime)
 
 
 class Message(Base):
