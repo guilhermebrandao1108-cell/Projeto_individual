@@ -92,3 +92,7 @@ projeto/
 │   └── frontend/        interface React + TypeScript, testes unitários e de ponta a ponta
 └── .github/workflows/   CI a cada push: análise, backend (SQLite e PostgreSQL), frontend e ponta a ponta
 ```
+
+## Licença
+
+O código está sob a licença [MIT](LICENSE), © 2026 Guilherme Vieira Brandão. Os dados brutos do Consumidor.gov.br não são redistribuídos aqui: o repositório traz o script que os baixa da fonte oficial e apenas resultados agregados.
