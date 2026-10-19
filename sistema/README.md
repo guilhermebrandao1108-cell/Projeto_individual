@@ -4,7 +4,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 
 | Parte | Pasta | Status |
 |---|---|---|
-| API (backend) | [`backend/`](backend/) | ✅ 71 testes (pytest) · migrações Alembic |
+| API (backend) | [`backend/`](backend/) | ✅ 74 testes (pytest) · migrações Alembic |
 | Interface (frontend) | [`frontend/`](frontend/) | ✅ 18 testes (Vitest) + 8 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
@@ -23,6 +23,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 | 77,7% já tinham procurado a empresa | Histórico único: mensagens, notas internas e trilha de auditoria de cada evento | [`models.py`](backend/app/models.py) |
 | Desempenho varia por empresa e problema | Filas (categorias), responsável, contagem de transferências e fila ordenada pelo prazo | [`services/tickets.py`](backend/app/services/tickets.py) |
 | 67% sem avaliação | Avaliação de 1 a 5 na confirmação, com cobertura medida | [`services/metrics.py`](backend/app/services/metrics.py) |
+| O piloto precisa de dados para o teste estatístico | `GET /metrics/export.csv` alimenta `python -m atendimento piloto` ([`analise/`](../analise/README.md#do-estudo-ao-piloto)): o mesmo teste de permutação da Etapa 1, agora sobre os chamados do sistema | [`services/export.py`](backend/app/services/export.py) |
 | O piloto precisa de métricas | `GET /metrics/overview?start=&end=`: % no SLA, p90 da primeira resposta, solução confirmada, reabertura e cobertura de avaliação. O painel compara o período escolhido (7, 30 ou 90 dias) com o período anterior de mesmo tamanho | [`services/metrics.py`](backend/app/services/metrics.py) |
 
 ## Fluxo de um chamado
@@ -104,7 +105,7 @@ Para começar com um banco vazio, sem dados de demonstração, use `.\.venv\Scri
 Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gestor** na tela de login. As contas de demonstração são `ana@demo.com`, `lucas@demo.com` e `gestor@demo.com`, todas com a senha `demo12345`. A documentação interativa da API fica em http://localhost:8000/docs.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest        # backend: 71 testes, ~20 s
+.\.venv\Scripts\python.exe -m pytest        # backend: 74 testes, ~20 s
 npm test                                     # frontend (em sistema/frontend): 18 testes
 npm run e2e                                  # ponta a ponta: sobe API + interface e roda 8 fluxos no navegador
 ```
@@ -134,6 +135,7 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 | GET, POST, PATCH | `/categories` | leitura: todos · escrita: gestor |
 | GET, POST | `/users` | equipe / gestor |
 | GET | `/metrics/overview?start=&end=&category_id=` | gestor |
+| GET | `/metrics/export.csv?start=&end=`: um chamado por linha, sem nomes, e-mails ou mensagens | gestor |
 
 ## Decisões e próximos passos
 

@@ -5,7 +5,7 @@ Um sistema de gestão de chamados construído a partir de evidência. Antes de e
 | Etapa | Pasta | Status |
 |---|---|---|
 | 1. Estudo de caso: a dor existe? | [`analise/`](analise/) | ✅ Concluída |
-| 2. Sistema de gestão de chamados | [`sistema/`](sistema/) | ✅ API FastAPI + interface React, 97 testes (unitários, API e ponta a ponta) |
+| 2. Sistema de gestão de chamados | [`sistema/`](sistema/) | ✅ API FastAPI + interface React, 100 testes (unitários, API e ponta a ponta) |
 
 ## Etapa 1 — o que os dados mostram
 
@@ -33,7 +33,7 @@ Também disponíveis: o [estudo de caso visual](analise/reports/estudo_de_caso.h
 
 ![Fila de atendimento ordenada por prazo](sistema/docs/screenshots/fila.png)
 
-O sistema transforma cada evidência da análise numa regra de negócio, como mostra a tabela abaixo. Os detalhes, as instruções para executar e mais telas estão em [`sistema/README.md`](sistema/README.md).
+O sistema transforma cada evidência da análise numa regra de negócio, como mostra a tabela abaixo. E o ciclo se fecha: os chamados do sistema podem ser exportados e analisados com o mesmo teste de permutação da Etapa 1 (`python -m atendimento piloto`). Os detalhes, as instruções para executar e mais telas estão em [`sistema/README.md`](sistema/README.md).
 
 ## Da evidência aos requisitos
 

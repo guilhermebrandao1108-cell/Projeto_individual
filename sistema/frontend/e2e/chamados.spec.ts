@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { failOnConsoleErrors, loginAs, logout } from './helpers.ts'
 
@@ -126,6 +127,14 @@ test('gestor vê o painel com os indicadores do piloto', async ({ page }) => {
   await expect(page.getByText('chamados criados nos últimos 7 dias', { exact: false })).toBeVisible()
   await expect(page.getByText(/vs período anterior|igual ao período anterior/).first()).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('painel.png'), fullPage: true })
+
+  const downloading = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar CSV' }).click()
+  const file = await downloading
+  expect(file.suggestedFilename()).toMatch(/^chamados_\d{8}\.csv$/)
+  const csv = await readFile(await file.path(), 'utf-8')
+  expect(csv.split('\n')[0]).toContain('sla_primeira_resposta')
+  expect(csv).not.toContain('@demo.com')                     // no personal data in the export
 })
 
 test('fila no celular não tem rolagem horizontal @mobile', async ({ page }) => {

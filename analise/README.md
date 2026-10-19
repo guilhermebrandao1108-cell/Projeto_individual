@@ -32,10 +32,12 @@ analise/
 │   ├── stats.py          estratos, teste de permutação, p-valor e bootstrap por empresas
 │   ├── plots.py          gráficos em matplotlib, uma função por figura
 │   ├── pipeline.py       orquestra: dados → descrição → teste → métricas, CSVs e figuras
-│   └── __main__.py       linha de comando: baixar | analisar
+│   ├── piloto.py         o mesmo teste aplicado aos chamados exportados pelo sistema (Etapa 2)
+│   └── __main__.py       linha de comando: baixar | analisar | piloto
 ├── tests/
 │   ├── test_statistics.py  algoritmo comparado com a enumeração exata em amostra pequena
-│   └── test_auditoria.py   recálculo independente a partir dos dados brutos
+│   ├── test_auditoria.py   recálculo independente a partir dos dados brutos
+│   └── test_piloto.py      análise do piloto com dados sintéticos de efeito conhecido
 ├── data/
 │   ├── manifest.json     URLs oficiais, tamanhos e SHA-256 dos arquivos usados
 │   ├── raw/              ZIPs oficiais (fora do Git, baixados pelo comando baixar)
@@ -67,6 +69,16 @@ Em macOS/Linux, use `python3 -m venv .venv` e `.venv/bin/python`.
 O comando `baixar` verifica cada arquivo contra o SHA-256 do manifesto e recusa versões diferentes do snapshot registrado. A opção `--refresh-manifest` redescobre o catálogo oficial e regrava o manifesto, então revise o diff antes de atualizar resultados. Sem os dados brutos, `test_auditoria.py` é pulado e os testes do algoritmo continuam rodando.
 
 Para rodar o notebook, instale o Jupyter (`pip install jupyter`), baixe os dados e abra `notebooks/estudo.ipynb`. A execução completa leva cerca de 1 minuto.
+
+## Do estudo ao piloto
+
+O sistema da Etapa 2 exporta os seus chamados (`GET /metrics/export.csv`, ou o botão **Exportar CSV** no painel do gestor), com uma linha por chamado e sem dados pessoais. O mesmo teste de permutação roda sobre esse arquivo:
+
+```powershell
+py -m atendimento piloto chamados_20261018.csv
+```
+
+A pergunta é a mesma do estudo, adaptada aos dados do sistema: entre os chamados que receberam uma proposta de solução, os que tiveram a primeira resposta fora do SLA foram mais reabertos (solução rejeitada pelo cliente), comparando dentro da mesma fila? O teste usa as mesmas funções validadas em `tests/test_statistics.py`. Assim como no estudo, o resultado é uma associação. Para medir o efeito do sistema, é preciso comparar grupos com e sem ele (seção 5 do [relatório](reports/relatorio.md)).
 
 ## Dados, privacidade e limites
 

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { download, query } from '../api/client'
 import { useCategories, useCreateUser, useMetrics, useSaveCategory, useStaff } from '../api/hooks'
 import type { Category, Metrics, Role } from '../api/types'
 import { Empty, ErrorNote, Loading } from '../components/ui'
@@ -42,9 +43,11 @@ const DAY = 86_400_000
 export function Dashboard() {
   const [days, setDays] = useState(30)
   const [now] = useState(() => Date.now()) // fixed while the page is open, so query keys stay stable
+  const [exportError, setExportError] = useState<unknown>(null)
   const range = (from: number, to: number) => ({ start: new Date(from).toISOString(), end: new Date(to).toISOString() })
+  const currentRange = days ? range(now - days * DAY, now) : {}
   const live = useMetrics()                                          // "Agora": every open ticket, any age
-  const current = useMetrics(days ? range(now - days * DAY, now) : {})
+  const current = useMetrics(currentRange)
   const previous = useMetrics(days ? range(now - 2 * days * DAY, now - days * DAY) : null)
   const m = current.data
   const p = days ? previous.data : undefined
@@ -60,15 +63,22 @@ export function Dashboard() {
           <h1>Painel</h1>
           <span className="muted small">Indicadores propostos no estudo de caso para medir o efeito do sistema</span>
         </div>
-        <div className="segmented" role="group" aria-label="Período">
-          {PERIODS.map((period) => (
-            <button key={period.days} className={days === period.days ? 'active' : ''} aria-pressed={days === period.days}
-                    onClick={() => setDays(period.days)}>
-              {period.label}
-            </button>
-          ))}
+        <div className="row">
+          <div className="segmented" role="group" aria-label="Período">
+            {PERIODS.map((period) => (
+              <button key={period.days} className={days === period.days ? 'active' : ''} aria-pressed={days === period.days}
+                      onClick={() => setDays(period.days)}>
+                {period.label}
+              </button>
+            ))}
+          </div>
+          <button className="btn" title="Um chamado por linha, sem dados pessoais: entrada de python -m atendimento piloto"
+                  onClick={() => { setExportError(null); download(`/metrics/export.csv${query(currentRange)}`, 'chamados.csv').catch(setExportError) }}>
+            Exportar CSV
+          </button>
         </div>
       </div>
+      <ErrorNote error={exportError} />
 
       <h2 className="section">Agora</h2>
       <div className="tiles">

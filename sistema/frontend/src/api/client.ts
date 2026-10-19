@@ -57,6 +57,21 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   return (response.status === 204 ? undefined : await response.json()) as T
 }
 
+/** Authenticated file download (an <a href> could not send the bearer token). */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  const token = tokenStore.get()
+  const response = await fetch(BASE + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    throw new ApiError(response.status, errorMessage(body, `Erro ${response.status}`))
+  }
+  const name = /filename="([^"]+)"/.exec(response.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName
+  const url = URL.createObjectURL(await response.blob())
+  const link = Object.assign(document.createElement('a'), { href: url, download: name })
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export const post = <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(body) })
 export const patch = <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
