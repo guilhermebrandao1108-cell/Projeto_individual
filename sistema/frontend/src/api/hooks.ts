@@ -36,7 +36,13 @@ export const useStaff = (enabled: boolean) =>
     queryFn: async () => (await request<User[]>('/users')).filter((u) => u.role !== 'cliente' && u.is_active),
   })
 
-export const useMetrics = () => useQuery({ queryKey: keys.metrics, queryFn: () => request<MetricsOverview>('/metrics/overview') })
+/** `range` null disables the query (e.g. no previous period when showing everything). */
+export const useMetrics = (range: { start?: string; end?: string } | null = {}) =>
+  useQuery({
+    queryKey: [...keys.metrics, range],
+    enabled: range !== null,
+    queryFn: () => request<MetricsOverview>(`/metrics/overview${query({ ...range })}`),
+  })
 
 /** Every ticket mutation returns the updated detail: write it to the cache and refresh lists. */
 function useTicketMutation<V>(id: number, fn: (vars: V) => Promise<TicketDetail>) {

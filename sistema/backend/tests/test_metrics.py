@@ -1,4 +1,6 @@
 """The indicators the case study proposes for the pilot."""
+from datetime import timedelta
+
 import pytest
 
 
@@ -37,3 +39,14 @@ def test_overview(client, auth, open_ticket, clock):
 def test_empty_overview_has_no_division_by_zero(client, auth):
     m = client.get('/metrics/overview', headers=auth['gestor']).json()
     assert m['tickets'] == 0 and m['first_response_within_sla'] is None and m['by_category'] == []
+
+
+def test_period_filter_uses_creation_date(client, auth, open_ticket, clock):
+    open_ticket()
+    clock.advance(days=10)
+    open_ticket()
+    start = (clock.now - timedelta(days=7)).isoformat()
+    m = client.get('/metrics/overview', params={'start': start}, headers=auth['gestor']).json()
+    assert m['tickets'] == 1
+    m = client.get('/metrics/overview', params={'end': start}, headers=auth['gestor']).json()
+    assert m['tickets'] == 1 and m['open_overdue'] == 1     # only the old one, long overdue

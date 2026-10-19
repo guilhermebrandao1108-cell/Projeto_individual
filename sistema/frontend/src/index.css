@@ -156,6 +156,14 @@ label.check input { width: auto; }
 .tile.good b { color: var(--success); }
 .tile.warn b { color: var(--warn); }
 .tile.danger b { color: var(--danger); }
+.delta { font-size: 13px; font-weight: 600; color: var(--muted); }
+.delta.up { color: var(--success); }
+.delta.down { color: var(--danger); }
+.section small { font-size: 13px; font-weight: 400; margin-left: 6px; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.segmented button { font: inherit; font-size: 14px; border: 0; background: none; padding: 7px 14px; cursor: pointer; color: var(--muted); }
+.segmented button + button { border-left: 1px solid var(--line); }
+.segmented button.active { background: var(--primary); color: var(--primary-ink); }
 .bar { position: relative; height: 22px; min-width: 140px; background: var(--soft); border-radius: 6px; overflow: hidden; }
 .bar span { position: absolute; inset: 0 auto 0 0; background: #a9d6da; }
 .bar em { position: relative; font-style: normal; font-size: 12px; font-weight: 600; padding-left: 8px; line-height: 22px; }

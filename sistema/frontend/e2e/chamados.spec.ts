@@ -120,6 +120,12 @@ test('gestor vê o painel com os indicadores do piloto', async ({ page }) => {
     await expect(page.getByText(label, { exact: true }).first()).toBeVisible() // tile (and table header)
   }
   await expect(page.getByRole('cell', { name: 'Cobrança' })).toBeVisible()
+
+  await page.getByRole('button', { name: '7 dias' }).click()
+  await expect(page.getByRole('button', { name: '7 dias' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('chamados criados nos últimos 7 dias', { exact: false })).toBeVisible()
+  await expect(page.getByText(/vs período anterior|igual ao período anterior/).first()).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('painel.png'), fullPage: true })
 })
 
 test('fila no celular não tem rolagem horizontal @mobile', async ({ page }) => {

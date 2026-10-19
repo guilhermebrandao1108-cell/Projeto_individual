@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom'
 import { useCategories, useCreateUser, useMetrics, useSaveCategory, useStaff } from '../api/hooks'
 import type { Category, Metrics, Role } from '../api/types'
 import { Empty, ErrorNote, Loading } from '../components/ui'
+import { compare, type Delta } from '../lib/compare'
 import { formatNumber, formatPercent, ROLE_LABEL } from '../lib/format'
 
 // --- Painel ---------------------------------------------------------------------
-function Tile({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: 'danger' | 'warn' | 'good' }) {
+function Tile({ label, value, hint, tone, delta }: { label: string; value: string; hint?: string; tone?: 'danger' | 'warn' | 'good'; delta?: Delta | null }) {
   return (
     <div className={`card tile ${tone ?? ''}`}>
       <span className="tile-label">{label}</span>
       <b>{value}</b>
+      {delta && <span className={`delta ${delta.good === null ? '' : delta.good ? 'up' : 'down'}`}>{delta.text}</span>}
       {hint && <span className="muted small">{hint}</span>}
     </div>
   )
@@ -29,49 +31,80 @@ function Bar({ value }: { value: number | null }) {
 const tone = (value: number | null, good: number, bad: number) =>
   value === null ? undefined : value >= good ? 'good' : value < bad ? 'danger' : 'warn'
 
+const PERIODS = [
+  { days: 7, label: '7 dias' },
+  { days: 30, label: '30 dias' },
+  { days: 90, label: '90 dias' },
+  { days: 0, label: 'Tudo' },
+]
+const DAY = 86_400_000
+
 export function Dashboard() {
-  const { data: m, isLoading, error } = useMetrics()
-  if (isLoading) return <Loading />
-  if (!m) return <ErrorNote error={error} />
+  const [days, setDays] = useState(30)
+  const [now] = useState(() => Date.now()) // fixed while the page is open, so query keys stay stable
+  const range = (from: number, to: number) => ({ start: new Date(from).toISOString(), end: new Date(to).toISOString() })
+  const live = useMetrics()                                          // "Agora": every open ticket, any age
+  const current = useMetrics(days ? range(now - days * DAY, now) : {})
+  const previous = useMetrics(days ? range(now - 2 * days * DAY, now - days * DAY) : null)
+  const m = current.data
+  const p = days ? previous.data : undefined
+  if (live.isLoading || current.isLoading) return <Loading />
+  if (!m || !live.data) return <ErrorNote error={current.error || live.error} />
+  const d = (key: keyof Metrics, kind: 'rate' | 'hours' | 'score', higherIsBetter: boolean) =>
+    p ? compare(m[key] as number | null, p[key] as number | null, kind, higherIsBetter) : null
 
   return (
     <>
       <div className="page-head">
-        <h1>Painel</h1>
-        <span className="muted small">Indicadores propostos no estudo de caso para medir o efeito do sistema</span>
+        <div>
+          <h1>Painel</h1>
+          <span className="muted small">Indicadores propostos no estudo de caso para medir o efeito do sistema</span>
+        </div>
+        <div className="segmented" role="group" aria-label="Período">
+          {PERIODS.map((period) => (
+            <button key={period.days} className={days === period.days ? 'active' : ''} aria-pressed={days === period.days}
+                    onClick={() => setDays(period.days)}>
+              {period.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <h2 className="section">Agora</h2>
       <div className="tiles">
-        <Tile label="Chamados abertos" value={String(m.open_tickets)} hint={`de ${m.tickets} no total`} />
-        <Tile label="Em risco" value={String(m.open_at_risk)} hint="perto de vencer o prazo" tone={m.open_at_risk ? 'warn' : undefined} />
-        <Tile label="Vencidos" value={String(m.open_overdue)} hint="prazo já estourado" tone={m.open_overdue ? 'danger' : 'good'} />
+        <Tile label="Chamados abertos" value={String(live.data.open_tickets)} hint={`de ${live.data.tickets} no total`} />
+        <Tile label="Em risco" value={String(live.data.open_at_risk)} hint="perto de vencer o prazo" tone={live.data.open_at_risk ? 'warn' : undefined} />
+        <Tile label="Vencidos" value={String(live.data.open_overdue)} hint="prazo já estourado" tone={live.data.open_overdue ? 'danger' : 'good'} />
       </div>
-      {(m.open_overdue > 0 || m.open_at_risk > 0) && (
+      {(live.data.open_overdue > 0 || live.data.open_at_risk > 0) && (
         <p><Link to="/fila">Ver na fila →</Link></p>
       )}
 
-      <h2 className="section">Prazos</h2>
+      <h2 className="section">
+        Prazos <small className="muted">{days ? `chamados criados nos últimos ${days} dias · ${m.tickets}` : `todos os chamados · ${m.tickets}`}</small>
+      </h2>
       <div className="tiles">
-        <Tile label="1ª resposta no prazo" value={formatPercent(m.first_response_within_sla)}
+        <Tile label="1ª resposta no prazo" value={formatPercent(m.first_response_within_sla)} delta={d('first_response_within_sla', 'rate', true)}
               tone={tone(m.first_response_within_sla, .9, .7)} hint="vencidos sem resposta contam como falha" />
-        <Tile label="p90 da 1ª resposta" value={formatNumber(m.first_response_p90_hours, ' h')} hint="90% respondidos até aqui" />
-        <Tile label="Resolução no prazo" value={formatPercent(m.resolution_within_sla)} tone={tone(m.resolution_within_sla, .9, .7)} />
+        <Tile label="p90 da 1ª resposta" value={formatNumber(m.first_response_p90_hours, ' h')} delta={d('first_response_p90_hours', 'hours', false)}
+              hint="90% respondidos até aqui" />
+        <Tile label="Resolução no prazo" value={formatPercent(m.resolution_within_sla)} delta={d('resolution_within_sla', 'rate', true)}
+              tone={tone(m.resolution_within_sla, .9, .7)} />
       </div>
 
       <h2 className="section">Resolução de verdade</h2>
       <div className="tiles">
-        <Tile label="Solução confirmada" value={formatPercent(m.confirmed_resolution_rate)}
+        <Tile label="Solução confirmada" value={formatPercent(m.confirmed_resolution_rate)} delta={d('confirmed_resolution_rate', 'rate', true)}
               hint="confirmadas pelo cliente ÷ propostas" tone={tone(m.confirmed_resolution_rate, .8, .6)} />
-        <Tile label="Reabertura" value={formatPercent(m.reopen_rate)} hint="soluções rejeitadas pelo cliente"
+        <Tile label="Reabertura" value={formatPercent(m.reopen_rate)} hint="soluções rejeitadas pelo cliente" delta={d('reopen_rate', 'rate', false)}
               tone={m.reopen_rate === null ? undefined : m.reopen_rate <= .1 ? 'good' : m.reopen_rate > .25 ? 'danger' : 'warn'} />
-        <Tile label="Avaliação" value={formatNumber(m.satisfaction_avg, ' / 5')}
+        <Tile label="Avaliação" value={formatNumber(m.satisfaction_avg, ' / 5')} delta={d('satisfaction_avg', 'score', true)}
               hint={`${formatPercent(m.satisfaction_coverage)} dos fechados avaliados`} />
       </div>
 
       <h2 className="section">Por fila</h2>
       {!m.by_category.length ? (
-        <Empty>Sem chamados ainda.</Empty>
+        <Empty>Sem chamados no período.</Empty>
       ) : (
         <div className="table-wrap card">
           <table className="table">
