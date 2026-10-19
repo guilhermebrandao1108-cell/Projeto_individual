@@ -1,0 +1,162 @@
+{
+  "source": "Senacon / Consumidor.gov.br",
+  "cohort": "Finalizadas de janeiro a dezembro de 2025",
+  "quality": {
+    "total_rows": 2328863,
+    "months": 12,
+    "companies": 1740,
+    "segments": 45,
+    "answered_rows": 2257501,
+    "not_answered_rows": 71362,
+    "evaluated_rows": 769636,
+    "not_evaluated_rows": 1559223,
+    "resolved_evaluated_rows": 337064,
+    "unresolved_evaluated_rows": 432572,
+    "evaluation_coverage": 0.33047714700263603,
+    "analytic_rows": 748771,
+    "missing_by_column": {
+      "date": 0,
+      "days": 71362,
+      "company": 0,
+      "segment": 0,
+      "problem_group": 0,
+      "contacted": 0,
+      "answered": 0,
+      "evaluation": 4,
+      "rating": 1559223,
+      "source_month": 0,
+      "month": 0
+    },
+    "negative_time_rows": 0,
+    "nonfinite_nonmissing_time_rows": 0,
+    "evaluated_not_answered_rows": 20865,
+    "evaluated_answered_invalid_time_rows": 0,
+    "evaluated_answered_valid_missing_stratum_rows": 0,
+    "time_summary_answered": {
+      "count": 2257501.0,
+      "mean": 6.206070340611145,
+      "std": 3.293090134980486,
+      "min": 0.0,
+      "25%": 3.0,
+      "50%": 7.0,
+      "75%": 9.0,
+      "90%": 10.0,
+      "95%": 10.0,
+      "99%": 13.0,
+      "max": 31.0
+    },
+    "contacted_company_share": 0.7767112105778656,
+    "unresolved_rate_among_evaluated": 0.5620475133699567,
+    "evaluation_by_primary_band": {
+      "False": {
+        "size": 1264456.0,
+        "sum": 421276.0,
+        "mean": 0.33316778124347546
+      },
+      "True": {
+        "size": 993045.0,
+        "sum": 327495.0,
+        "mean": 0.3297886802712868
+      }
+    }
+  },
+  "primary": {
+    "all_strata": 6542,
+    "eligible_strata": 4121,
+    "excluded_strata": 2421,
+    "excluded_rows": 7348,
+    "included_rows": 741423,
+    "coverage_fraction": 0.990186585751852,
+    "threshold_days": 7,
+    "strata_keys": [
+      "company",
+      "problem_group"
+    ],
+    "effect_pp": 4.825416419191224,
+    "crude_effect_pp": 1.3307692500460266,
+    "crude_same_overlap_effect_pp": 1.3324439149979384,
+    "crude_groups": {
+      "fast": {
+        "size": 421276.0,
+        "sum": 231552.0,
+        "mean": 0.5496444136385648
+      },
+      "slow": {
+        "size": 327495.0,
+        "sum": 184364.0,
+        "mean": 0.562952106139025
+      }
+    },
+    "permutations": 9999,
+    "seed": 20251018,
+    "extreme_count": 0,
+    "p_value": 0.0001,
+    "alpha": 0.05,
+    "reject_h0": true,
+    "ci95_cluster_pp": [
+      2.4272116478258354,
+      6.985911994727305
+    ],
+    "bootstrap_replicates": 4999,
+    "bootstrap_seed": 20251019,
+    "companies_in_bootstrap": 1054,
+    "null_mean_pp": -0.0005642363331334492,
+    "null_sd_pp": 0.13958889829567797,
+    "null_min_pp": -0.47557676867106224,
+    "null_max_pp": 0.6153729501566813
+  },
+  "sensitivity": [
+    {
+      "label": ">5 dias · empresa × problema",
+      "threshold": 5,
+      "keys": [
+        "company",
+        "problem_group"
+      ],
+      "effect_pp": 4.73259240965551,
+      "all_strata": 6542,
+      "eligible_strata": 4065,
+      "excluded_strata": 2477,
+      "excluded_rows": 8187,
+      "included_rows": 740584,
+      "coverage_fraction": 0.9890660829546016
+    },
+    {
+      "label": ">10 dias · empresa × problema",
+      "threshold": 10,
+      "keys": [
+        "company",
+        "problem_group"
+      ],
+      "effect_pp": 3.57634361667162,
+      "all_strata": 6542,
+      "eligible_strata": 1709,
+      "excluded_strata": 4833,
+      "excluded_rows": 152525,
+      "included_rows": 596246,
+      "coverage_fraction": 0.796299536173276
+    },
+    {
+      "label": ">7 dias · segmento × problema",
+      "threshold": 7,
+      "keys": [
+        "segment",
+        "problem_group"
+      ],
+      "effect_pp": 4.138812671404722,
+      "all_strata": 318,
+      "eligible_strata": 309,
+      "excluded_strata": 9,
+      "excluded_rows": 14,
+      "included_rows": 748757,
+      "coverage_fraction": 0.9999813026946823
+    }
+  ],
+  "software": {
+    "python": "3.14.3",
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "matplotlib": "3.11.1"
+  },
+  "interpretation": "Associação observacional sob suposição de permutabilidade; não prova causalidade, necessidade comercial ou eficácia de software."
+}

@@ -1,0 +1,129 @@
+{
+  "catalog_url": "https://consumidor.gov.br/pages/publicacao/externo/publicacoes.json?indicadorTipoPublicacao=2",
+  "retrieved_at_utc": "2026-10-18T21:57:16.315013+00:00",
+  "source": "Senacon / Consumidor.gov.br",
+  "cohort": "Finalizadas de janeiro a dezembro de 2025",
+  "license_note": "Fonte pública oficial; licença específica dos arquivos deve ser verificada junto à fonte. Dados brutos não redistribuídos.",
+  "files": [
+    {
+      "file": "finalizadas_2025-01.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250200000008975/download",
+      "publication_id": "20250200000008975",
+      "title": "Dados - Janeiro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em Janeiro de 2025.\r\n\r\n",
+      "catalog_update": "07/11/2025 às 09:55",
+      "bytes": 5082765,
+      "sha256": "431be33b22f59e4c768d3d0e5e1b30e6cbba2fb1016eaaaa4ec1d48b74d716f8"
+    },
+    {
+      "file": "finalizadas_2025-02.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250300000009044/download",
+      "publication_id": "20250300000009044",
+      "title": "Dados - Fevereiro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em fevereiro de 2025.\r\n",
+      "catalog_update": "07/11/2025 às 09:56",
+      "bytes": 5313999,
+      "sha256": "74ba2b7bfc2c63538bb6f383ffac83982d2b4ca4e35ab48d22c1d7ae23362a2a"
+    },
+    {
+      "file": "finalizadas_2025-03.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250400000009098/download",
+      "publication_id": "20250400000009098",
+      "title": "Dados - Março/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em março de 2025.",
+      "catalog_update": "09/06/2025 às 14:35",
+      "bytes": 4875998,
+      "sha256": "ba8bd7022698263bed2d81ba71db684387ff0aa82dd254348d71e3a451aca5be"
+    },
+    {
+      "file": "finalizadas_2025-04.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250500000009171/download",
+      "publication_id": "20250500000009171",
+      "title": "Dados - Abril/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em abril de 2025.",
+      "catalog_update": "09/06/2025 às 14:35",
+      "bytes": 5685648,
+      "sha256": "afecd3db5b431a6dee73c4169251f93fa12c735f5528c4740bac65bfbe563a74"
+    },
+    {
+      "file": "finalizadas_2025-05.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250600000009237/download",
+      "publication_id": "20250600000009237",
+      "title": "Dados - Maio/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em maio de 2025.",
+      "catalog_update": "09/06/2025 às 14:34",
+      "bytes": 5843771,
+      "sha256": "4e88124819743eb6da9e7fd3bea3b9d53b4363323e67e551ae97dbe3da369e6c"
+    },
+    {
+      "file": "finalizadas_2025-06.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250700000009296/download",
+      "publication_id": "20250700000009296",
+      "title": "Dados - Junho/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em junho de 2025.",
+      "catalog_update": "08/07/2025 às 09:27",
+      "bytes": 6304467,
+      "sha256": "d2c0e3f0316f0faa2665aa5a8cb0acd1ccec363db90dd6033ab389dc156d64cd"
+    },
+    {
+      "file": "finalizadas_2025-07.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250800000009359/download",
+      "publication_id": "20250800000009359",
+      "title": "Dados - Julho/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em julho de 2025.",
+      "catalog_update": "08/08/2025 às 09:42",
+      "bytes": 6875680,
+      "sha256": "33ed931372fd13ed4725c00068eb1d473cd2fc708459e0c9af66e5c74a944935"
+    },
+    {
+      "file": "finalizadas_2025-08.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20250900000009466/download",
+      "publication_id": "20250900000009466",
+      "title": "Dados - Agosto/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em Agosto de 2025.",
+      "catalog_update": "09/10/2025 às 14:50",
+      "bytes": 7293932,
+      "sha256": "eeee594b0eb7b05d1f455417a54ed83909e58c291501f0667114d69b969aaafb"
+    },
+    {
+      "file": "finalizadas_2025-09.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20251000000009534/download",
+      "publication_id": "20251000000009534",
+      "title": "Dados - Setembro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em Setembro de 2025.",
+      "catalog_update": "09/10/2025 às 14:41",
+      "bytes": 6159326,
+      "sha256": "a096e25b3829495e61d23ad994ef096fe82be792dd93920e8c4773498c59629a"
+    },
+    {
+      "file": "finalizadas_2025-10.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20251100000009986/download",
+      "publication_id": "20251100000009986",
+      "title": "Dados - Outubro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em outubro de 2025.",
+      "catalog_update": "07/11/2025 às 09:57",
+      "bytes": 8275619,
+      "sha256": "b841b9f9736b8c7065580ebfe03d8e0692e85f6f9af43cc05be9194e3e39ab53"
+    },
+    {
+      "file": "finalizadas_2025-11.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20251200000010424/download",
+      "publication_id": "20251200000010424",
+      "title": "Dados - Novembro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em Novembro de 2025.",
+      "catalog_update": "11/12/2025 às 11:38",
+      "bytes": 6435499,
+      "sha256": "fef4a4e8703c2be3683eb323daf2b50110c3480e11444e6f0c8ca737889abd3f"
+    },
+    {
+      "file": "finalizadas_2025-12.zip",
+      "url": "https://consumidor.gov.br/pages/publicacao/externo/20260100000010477/download",
+      "publication_id": "20260100000010477",
+      "title": "Dados - Dezembro/2025",
+      "description": "Arquivo em formato CSV com dados de todas as reclamações finalizadas em Dezembro de 2025.",
+      "catalog_update": "06/01/2026 às 10:26",
+      "bytes": 8898404,
+      "sha256": "ec825521c0572c51a14c927793a7962e131eb86b33f837e16d18bc5466610ed3"
+    }
+  ]
+}

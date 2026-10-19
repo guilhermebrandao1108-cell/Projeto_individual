@@ -1,0 +1,4 @@
+label,threshold,effect_pp,all_strata,eligible_strata,excluded_strata,excluded_rows,included_rows,coverage_fraction
+>5 dias · empresa × problema,5,4.73259240965551,6542,4065,2477,8187,740584,0.9890660829546016
+>10 dias · empresa × problema,10,3.57634361667162,6542,1709,4833,152525,596246,0.796299536173276
+>7 dias · segmento × problema,7,4.138812671404722,318,309,9,14,748757,0.9999813026946823

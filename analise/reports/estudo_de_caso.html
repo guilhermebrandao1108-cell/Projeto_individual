@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento sob evidência</title>
+<meta name="description" content="Estudo de caso com 2,3 milhões de reclamações do Consumidor.gov.br (2025): tempo de resposta, não resolução e teste de permutação estratificado.">
+<style>
+  :root {
+    --ink: #143246; --muted: #5c6f7a; --line: #dce4e8; --bg: #fafcfd; --card: #ffffff;
+    --teal: #087e8b; --coral: #d65e47; --soft: #eef4f6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 48px 20px 80px; }
+  header .kicker { color: var(--teal); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 8px 0 16px; }
+  h2 { font-size: 26px; margin: 56px 0 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 760px; }
+  a { color: var(--teal); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 32px 0; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .kpi b { display: block; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi span { color: var(--muted); font-size: 14px; }
+  .kpi.alert b { color: var(--coral); }
+  .kpi.good b { color: var(--teal); }
+  figure { margin: 22px 0 30px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  figure img { width: 100%; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: 14.5px; padding: 10px 6px 2px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 24px; font-size: 15.5px; background: var(--card); }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--soft); font-weight: 650; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  .hyp { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .hyp div { border-radius: 12px; padding: 16px 18px; border: 1px solid var(--line); background: var(--card); }
+  .hyp .h0 { border-left: 5px solid var(--muted); }
+  .hyp .h1 { border-left: 5px solid var(--coral); }
+  .hyp strong { display: block; margin-bottom: 4px; }
+  .verdict { background: #fff4f1; border: 1px solid #f1c9bf; border-radius: 12px; padding: 18px 20px; margin: 20px 0; }
+  .verdict strong { color: var(--coral); }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 14px 0 20px; }
+  .steps li { counter-increment: s; position: relative; padding: 4px 0 10px 42px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--teal); color: #fff; font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+  code { background: var(--soft); padding: 1px 6px; border-radius: 5px; font-size: 15px; }
+  .note { color: var(--muted); font-size: 15px; }
+  ul.limits li { margin-bottom: 8px; }
+  footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    main { padding: 32px 16px 60px; }
+    .hyp { grid-template-columns: 1fr; }
+    figure { padding: 6px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="kicker">Estudo de caso · Consumidor.gov.br · 2025</div>
+  <h1>Demorar para responder está associado a mais reclamações sem solução</h1>
+  <p class="lead">Antes de construir um sistema de gestão de chamados, este estudo verifica com dados públicos se a dor existe. Foram analisadas 2,3 milhões de reclamações finalizadas em 2025, e a hipótese foi testada com permutação estratificada por empresa e tipo de problema.</p>
+</header>
+
+<section class="kpis" aria-label="Indicadores principais">
+  <div class="kpi"><b>2.328.863</b><span>reclamações finalizadas em 2025, de 1.740 empresas</span></div>
+  <div class="kpi alert"><b>432.572</b><span>avaliadas pelo consumidor como <em>não resolvidas</em> (56,2% das avaliadas)</span></div>
+  <div class="kpi alert"><b>+4,83 pp</b><span>de não resolução quando a resposta passa de 7 dias, na mesma empresa e problema</span></div>
+  <div class="kpi good"><b>p = 0,0001</b><span>teste unilateral com 9.999 permutações · IC95% de 2,43 a 6,99 pp</span></div>
+</section>
+
+<h2>1. A dor existe e é grande</h2>
+<p>O Consumidor.gov.br recebe conflitos de consumo que as empresas não resolveram no primeiro atendimento: 77,7% dos consumidores dizem ter procurado a empresa antes. O volume cresceu ao longo de 2025, mas só cerca de um terço dos casos recebe avaliação explícita. Por isso, todas as taxas de resolução abaixo usam como denominador apenas as reclamações avaliadas.</p>
+
+<figure>
+  <img src="../figures/01_volume_mensal.png" alt="Barras empilhadas mensais de 2025: reclamações resolvidas, não resolvidas e não avaliadas. O total sobe de cerca de 150 mil em janeiro para 275 mil em dezembro." loading="lazy">
+  <figcaption>Volume mensal de reclamações finalizadas. A parte cinza (não avaliada) não indica nem sucesso nem fracasso.</figcaption>
+</figure>
+
+<figure>
+  <img src="../figures/02_cobertura_e_resolucao.png" alt="À esquerda, o funil de 2,33 milhões de finalizadas até 741 mil usadas no teste. À direita, 43,8% resolvidas contra 56,2% não resolvidas entre as avaliadas." loading="lazy">
+  <figcaption>De 2,3 milhões de reclamações, 769 mil foram avaliadas, e a maioria dessas foi declarada <strong>não resolvida</strong>.</figcaption>
+</figure>
+
+<h2>2. Responder não é resolver</h2>
+<p>Quase todas as reclamações recebem resposta (96,9%), mas a resposta muitas vezes não resolve o problema. A curva de não resolução por tempo tem forma de “U”. Respostas em 0 a 2 dias têm 58,9% de não resolução, possivelmente respostas padronizadas que encerram o caso sem tratá-lo. O ponto mais baixo fica em 6 a 7 dias (51,5%), e depois a taxa volta a subir até 60,7% acima de 10 dias.</p>
+
+<figure>
+  <img src="../figures/03_tempo_e_desfecho.png" alt="À esquerda, a distribuição do tempo de resposta, com pico de 42% entre 8 e 10 dias. À direita, a não resolução por faixa: 58,9%, 54,1%, 51,5%, 56,1% e 60,7%." loading="lazy">
+  <figcaption>Taxas brutas, que ainda misturam empresas e tipos de problema diferentes. O eixo direito começa em 40%.</figcaption>
+</figure>
+
+<p>Isso já define um requisito de produto: o sistema precisa medir o <strong>prazo</strong> e também a <strong>solução confirmada</strong>, para não premiar respostas rápidas e vazias.</p>
+
+<h2>3. Hipóteses</h2>
+<p>A diferença bruta entre respostas lentas e rápidas é de apenas 1,33 pp, porque compara empresas e problemas muito diferentes entre si. O teste corrige isso comparando casos <strong>dentro</strong> de cada combinação de empresa e grupo de problema.</p>
+
+<div class="hyp">
+  <div class="h0"><strong>H₀ — hipótese nula</strong>Dentro de cada estrato empresa × problema, ser resolvida ou não independe de a resposta ter levado mais de 7 dias.</div>
+  <div class="h1"><strong>H₁ — hipótese alternativa</strong>Respostas acima de 7 dias têm proporção <em>maior</em> de não resolução. Teste unilateral, com α = 5%.</div>
+</div>
+
+<p class="note">O corte de 7 dias, a direção do teste e o nível de significância foram registrados no <a href="../docs/plano_analise.md">plano de análise</a> antes do cálculo dos resultados. Sete dias é um corte analítico, não um prazo legal.</p>
+
+<h2>4. Teste de permutação</h2>
+<ol class="steps">
+  <li>Em cada um dos 4.121 estratos comparáveis, mantém-se fixo quantos casos foram lentos e quantos ficaram sem solução.</li>
+  <li>Sob H₀, os rótulos “resolvida” e “não resolvida” são embaralhados entre os casos do estrato.</li>
+  <li>Calcula-se a diferença ponderada <code>T = Σ (nₛ/N) · (p_lentaₛ − p_rápidaₛ)</code>.</li>
+  <li>Repete-se 9.999 vezes. O p-valor é <code>(b + 1) / (B + 1)</code>, em que <code>b</code> é o número de embaralhamentos com T igual ou maior que o observado.</li>
+</ol>
+
+<figure>
+  <img src="../figures/05_permutacao_e_efeito.png" alt="Histograma da distribuição nula centrado em zero, entre −0,5 e +0,6 pp, com uma linha vermelha em 4,83 pp muito à direita. Ao lado, o efeito bruto de 1,33 pp e o efeito estratificado de 4,83 pp, com IC de 2,43 a 6,99." loading="lazy">
+  <figcaption>Se H₀ fosse verdadeira, as diferenças ficariam entre −0,5 e +0,6 pp. O valor observado, +4,83 pp, fica a mais de 30 desvios-padrão desse centro.</figcaption>
+</figure>
+
+<div class="verdict">
+  <strong>Decisão: rejeitamos H₀ ao nível de 5%.</strong> Nenhuma das 9.999 permutações atingiu o valor observado (p = 0,0001, o menor reportável com esse número de sorteios). Na prática, a cada 100 reclamações comparáveis, cerca de 5 a mais terminam sem solução quando a resposta passa de 7 dias. O IC95% de 2,43 a 6,99 pp foi obtido reamostrando empresas inteiras, 4.999 vezes.
+</div>
+
+<h3>O resultado depende das escolhas?</h3>
+<figure>
+  <img src="../figures/06_sensibilidade.png" alt="Barras horizontais com o efeito em quatro especificações: +4,83, +4,73, +3,58 e +4,14 pp." loading="lazy">
+  <figcaption>Mudando o corte para 5 ou 10 dias, ou estratificando por segmento em vez de empresa, o efeito continua positivo (de +3,6 a +4,8 pp).</figcaption>
+</figure>
+
+<h2>5. Onde a dor se concentra</h2>
+<figure>
+  <img src="../figures/04_segmentos.png" alt="Os oito maiores segmentos. Bancos lideram com cerca de 1 milhão de reclamações e 69,4% de não resolução. Provedores de internet têm 82,2%, e telecom tem 27,2%." loading="lazy">
+  <figcaption>Bancos e financeiras concentram 43% do volume. Provedores de conteúdo têm a maior taxa de não resolução (82,2%). Volume não é ranking de qualidade, porque falta o número de clientes de cada empresa.</figcaption>
+</figure>
+
+<h2>6. Do dado ao produto</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Evidência</th><th>Requisito do sistema de chamados</th><th>Métrica para validar no piloto</th></tr></thead>
+  <tbody>
+    <tr><td>+4,83 pp de não resolução acima de 7 dias</td><td>Fila com prazos (SLA) configuráveis e alertas antes do vencimento</td><td>% respondida no prazo e percentil 90 do tempo</td></tr>
+    <tr><td>Respostas em 0 a 2 dias também falham (58,9%)</td><td>Separar “respondido” de “solução confirmada pelo cliente”</td><td>Resolução confirmada e taxa de reabertura</td></tr>
+    <tr><td>77,7% já tinham procurado a empresa</td><td>Histórico único de interações por cliente</td><td>Recontatos por caso</td></tr>
+    <tr><td>Desempenho varia por empresa e tipo de problema</td><td>Triagem por categoria e atribuição de responsável</td><td>Tempo até atribuição e número de transferências</td></tr>
+    <tr><td>67% dos casos não têm avaliação</td><td>Pesquisa de satisfação no encerramento</td><td>Cobertura de avaliação</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Limites</h2>
+<ul class="limits">
+  <li><strong>Associação, não causa.</strong> Casos mais complexos podem ser, ao mesmo tempo, mais demorados e mais difíceis de resolver. A estratificação reduz esse problema, mas não o elimina.</li>
+  <li><strong>Seleção.</strong> Só 33% das reclamações são avaliadas, e a base contém apenas conflitos que chegaram à plataforma, não todo o atendimento das empresas.</li>
+  <li><strong>Eficácia do sistema não testada.</strong> Saber se um sistema de chamados <em>reduz</em> a não resolução exige um piloto, de preferência com adoção randomizada por equipe ou fila. O desenho está no <a href="relatorio.md">relatório completo</a>.</li>
+</ul>
+
+<footer>
+  <p>Fonte: <a href="https://www.consumidor.gov.br/pages/dadosabertos/externo/">Senacon / Consumidor.gov.br, dados abertos</a>, reclamações finalizadas de janeiro a dezembro de 2025. Os cálculos são deste projeto e reproduzíveis com <code>python -m atendimento analisar</code>. Os hashes dos arquivos estão em <a href="../data/manifest.json">data/manifest.json</a>, e os números completos em <a href="metrics.json">reports/metrics.json</a>. Passo a passo em <a href="../notebooks/estudo.ipynb">notebooks/estudo.ipynb</a>.</p>
+</footer>
+
+</main>
+</body>
+</html>
