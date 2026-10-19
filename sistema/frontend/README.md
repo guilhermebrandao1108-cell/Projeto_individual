@@ -9,6 +9,7 @@ Interface do sistema de chamados, com uma tela para cada perfil: cliente, atende
 - **TanStack Query**: estado do servidor, cache, revalidação após cada ação e atualização periódica da fila para manter o SLA em dia
 - **CSS próprio com tokens**, sem biblioteca de componentes, responsivo até 390 px
 - **Vitest + Testing Library**: testes de formatação e componentes
+- **Playwright**: testes de ponta a ponta com a API real e um banco recriado a cada execução
 
 ## Estrutura
 
@@ -26,6 +27,9 @@ src/
 │   ├── TicketPage.tsx  conversa, notas internas, ações, confirmação pelo cliente
 │   └── Manager.tsx     painel de métricas, filas/SLA e equipe
 └── lib/format.ts       rótulos e datas em pt-BR
+e2e/
+├── chamados.spec.ts    fluxos completos no navegador (desktop e celular)
+└── helpers.ts          login pelos atalhos de demonstração e falha em erro de console
 ```
 
 **A interface não decide regras.** As ações que aparecem num chamado vêm de `allowed_actions`, calculado pelo backend a partir do status e do perfil. Se a regra mudar no servidor, a tela acompanha.
@@ -45,4 +49,16 @@ Em desenvolvimento, o Vite encaminha `/api/*` para a API, então não há URL do
 npm test           # Vitest
 npm run lint       # oxlint
 npm run build      # checagem de tipos + build de produção em dist/
+npm run e2e        # Playwright: sobe API (porta 8001) e Vite (5174) e roda 7 fluxos
 ```
+
+O `npm run e2e` não usa o banco nem os servidores de desenvolvimento. Ele recria um banco próprio (`backend/e2e.db`) com os dados de demonstração e sobe a API e o Vite em portas separadas. No Windows, usa o Edge já instalado. Em outros sistemas, rode `npx playwright install chromium` uma vez antes. Os testes cobrem:
+
+- o ciclo completo, em que a nota interna não aparece para o cliente e só ele encerra o chamado;
+- a rejeição da solução, que reabre o chamado;
+- a pausa do SLA ao pedir informações;
+- o acesso por perfil e o redirecionamento de quem não está logado;
+- o painel do gestor;
+- a fila no celular sem rolagem horizontal.
+
+Qualquer erro no console do navegador faz o teste falhar.

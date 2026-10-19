@@ -5,7 +5,7 @@ API REST em **FastAPI** e interface em **React + TypeScript**, com regras de neg
 | Parte | Pasta | Status |
 |---|---|---|
 | API (backend) | [`backend/`](backend/) | ✅ 55 testes (pytest) · migrações Alembic |
-| Interface (frontend) | [`frontend/`](frontend/) | ✅ 13 testes (Vitest) · fluxo completo verificado no navegador |
+| Interface (frontend) | [`frontend/`](frontend/) | ✅ 13 testes (Vitest) + 7 de ponta a ponta (Playwright) |
 | Integração contínua | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | ✅ análise + backend + frontend a cada push |
 
 | Fila da equipe | Painel do gestor |
@@ -103,9 +103,10 @@ Abra http://localhost:5173 e use os botões **Cliente**, **Atendente** ou **Gest
 ```powershell
 .\.venv\Scripts\python.exe -m pytest        # backend: 55 testes, ~12 s
 npm test                                     # frontend (em sistema/frontend): 13 testes
+npm run e2e                                  # ponta a ponta: sobe API + interface e roda 7 fluxos no navegador
 ```
 
-O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da análise, as migrações (`alembic upgrade head` + `alembic check`), os testes e o seed do backend, e o lint, os testes e o build do frontend.
+O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da análise, as migrações (`alembic upgrade head` + `alembic check`), os testes e o seed do backend, o lint, os testes e o build do frontend e, por último, os testes de ponta a ponta no Chromium.
 
 | Variável | Padrão | Uso |
 |---|---|---|
@@ -137,4 +138,4 @@ O CI ([`ci.yml`](../.github/workflows/ci.yml)) roda a cada push os testes da an�
 - **Uma mudança de SLA não altera chamados já abertos.** O prazo combinado na abertura é mantido, e há um teste que garante isso.
 - **O SLA de resolução conta a proposta de solução,** não a confirmação. Se o cliente rejeitar, a proposta deixa de valer e o prazo continua correndo.
 - **Na fila, o filtro por estado de SLA é calculado em Python.** Com volume real, ele vai para SQL, comparando `*_due_at` com `now` e com as colunas `*_at`.
-- **Próximos passos:** PostgreSQL via Docker Compose (as migrações já são compatíveis), notificação por e-mail quando um chamado entra "em risco" e testes de ponta a ponta com Playwright no CI.
+- **Próximos passos:** PostgreSQL via Docker Compose (as migrações já são compatíveis), notificação por e-mail quando um chamado entra "em risco" e paginação da fila.
